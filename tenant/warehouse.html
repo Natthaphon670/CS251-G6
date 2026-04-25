@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8"><title>Warehouse</title><link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h1>Tenant Panel</h1>
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i> แผงควบคุม</a>
+            <a href="manage_product.html" class="nav-item"><i class="fas fa-box"></i> จัดการสินค้า</a>
+            <a href="warehouse.html" class="nav-item active"><i class="fas fa-warehouse"></i> คลังสินค้า</a>
+            <a href="promotion.html" class="nav-item"><i class="fas fa-tags"></i> โปรโมชัน</a>
+            <a href="sales_contract.html" class="nav-item"><i class="fas fa-file-contract"></i> ยอดขายและสัญญา</a>
+        </div>
+        <div class="main-content">
+            <div class="content-box">
+                <h3>สต็อกสินค้าปัจจุบัน</h3>
+                <table>
+                    <thead><tr><th>PID</th><th>ชื่อสินค้า</th><th>จำนวนในคลัง</th><th>เติมสินค้า</th></tr></thead>
+                    <tbody>
+                        <tr><td>P001</td><td>เสื้อยืดสีพื้น</td><td>45</td><td><input type="number" style="width: 80px;"> <button class="btn btn-primary">เพิ่ม</button></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8"><title>Manage Product</title><link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h1>Tenant Panel</h1>
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i> แผงควบคุม</a>
+            <a href="manage_product.html" class="nav-item active"><i class="fas fa-box"></i> จัดการสินค้า</a>
+            <a href="warehouse.html" class="nav-item"><i class="fas fa-warehouse"></i> คลังสินค้า</a>
+            <a href="promotion.html" class="nav-item"><i class="fas fa-tags"></i> โปรโมชัน</a>
+            <a href="sales_contract.html" class="nav-item"><i class="fas fa-file-contract"></i> ยอดขายและสัญญา</a>
+        </div>
+        <div class="main-content">
+            <div class="content-box">
+                <h3>เพิ่มสินค้าและระบุผู้จัดจำหน่าย (Supplier)</h3>
+                <form style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                    <div class="form-group"><label>รหัสสินค้า (PID)</label><input type="text" placeholder="PXXX"></div>
+                    <div class="form-group"><label>ชื่อสินค้า</label><input type="text"></div>
+                    <div class="form-group"><label>รหัส Supplier (SID)</label><input type="text" placeholder="SXXX"></div>
+                    <div class="form-group"><label>ราคาต่อหน่วย</label><input type="number"></div>
+                    <button class="btn btn-primary" style="grid-column: span 2;">บันทึกข้อมูลสินค้า</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
