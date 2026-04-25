@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Department Store – Product Detail</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </div>
+    <span class="logo-text">Department<br>Store</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="homepage.html">Homepage</a>
+    <a class="nav-link" href="#">Product Catalog</a>
+    <a class="nav-link" href="#">Shop Directory</a>
+  </nav>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-title">Product Detail</span>
+    <button class="btn-login" onclick="window.location.href='index.html'">Login</button>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="product-detail">
+
+      <!-- LEFT: Image carousel -->
+      <div class="img-section">
+
+        <button class="arrow-btn" id="imgLeft" aria-label="Previous">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+
+        <div class="img-card">
+          <div class="img-topbar"></div>
+          <div class="img-area">
+            <span class="product-emoji" id="productEmoji">🚪</span>
+          </div>
+          <div class="img-bottombar"></div>
+        </div>
+
+        <button class="arrow-btn" id="imgRight" aria-label="Next">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+      </div>
+
+      <!-- RIGHT: Info panel -->
+      <div class="info-panel">
+        <div class="prod-title">ประตู</div>
+
+        <div class="tags">
+          <span class="tag">Furniture</span>
+          <span class="tag">Tool</span>
+        </div>
+
+        <div class="prod-price">Price: 50$</div>
+        <div class="prod-meta">ร้านเฟอร์นิเจอร์</div>
+        <div class="prod-meta">จำนวนคงเหลือ: 5</div>
+
+        <div class="desc-label">Description</div>
+        <textarea class="desc-box" readonly>ใช้เพื่อเดินทางไปยังห้องต่างๆ</textarea>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const images = [
+  { emoji: '🚪' },
+  { emoji: '🪟' },
+  { emoji: '🛋️' },
+];
+
+let cur = 0;
+const emojiEl = document.getElementById('productEmoji');
+const btnL    = document.getElementById('imgLeft');
+const btnR    = document.getElementById('imgRight');
+
+function updateImg() {
+  emojiEl.style.opacity   = '0';
+  emojiEl.style.transform = 'scale(.85)';
+  setTimeout(() => {
+    emojiEl.textContent     = images[cur].emoji;
+    emojiEl.style.opacity   = '1';
+    emojiEl.style.transform = 'scale(1)';
+  }, 160);
+  btnL.disabled = cur === 0;
+  btnR.disabled = cur === images.length - 1;
+}
+
+btnL.addEventListener('click', () => { cur--; updateImg(); });
+btnR.addEventListener('click', () => { cur++; updateImg(); });
+updateImg();
+</script>
+</body>
+</html>
