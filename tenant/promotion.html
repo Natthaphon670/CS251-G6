@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8"><title>Promotion</title><link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h1>Tenant Panel</h1>
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i> แผงควบคุม</a>
+            <a href="manage_product.html" class="nav-item"><i class="fas fa-box"></i> จัดการสินค้า</a>
+            <a href="warehouse.html" class="nav-item"><i class="fas fa-warehouse"></i> คลังสินค้า</a>
+            <a href="promotion.html" class="nav-item active"><i class="fas fa-tags"></i> โปรโมชัน</a>
+            <a href="sales_contract.html" class="nav-item"><i class="fas fa-file-contract"></i> ยอดขายและสัญญา</a>
+        </div>
+        <div class="main-content">
+            <div class="content-box">
+                <h3>สร้างโปรโมชันใหม่</h3>
+                <div class="form-group"><label>ชื่อโปรโมชัน</label><input type="text"></div>
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex:1;"><label>วันที่เริ่ม</label><input type="date"></div>
+                    <div class="form-group" style="flex:1;"><label>วันที่สิ้นสุด</label><input type="date"></div>
+                </div>
+                <div class="form-group"><label>ส่วนลด (%)</label><input type="number"></div>
+                <button class="btn btn-primary">ยืนยันการใช้โปรโมชัน</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,1 +1,42 @@
-สวัสดี
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Tenant Dashboard</title>
+    <link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h1>Tenant Panel</h1>
+            <a href="index.html" class="nav-item active"><i class="fas fa-home"></i> แผงควบคุม</a>
+            <a href="manage_product.html" class="nav-item"><i class="fas fa-box"></i> จัดการสินค้า</a>
+            <a href="warehouse.html" class="nav-item"><i class="fas fa-warehouse"></i> คลังสินค้า</a>
+            <a href="promotion.html" class="nav-item"><i class="fas fa-tags"></i> โปรโมชัน</a>
+            <a href="sales_contract.html" class="nav-item"><i class="fas fa-file-contract"></i> ยอดขายและสัญญา</a>
+        </div>
+        <div class="main-content">
+            <header>
+                <h2>ยินดีต้อนรับร้านค้า กลุ่ม 6</h2>
+                <button class="btn btn-danger">ออกจากระบบ</button>
+            </header>
+            <div class="card-grid">
+                <div class="stat-card"><h3>ยอดขายวันนี้</h3><p>฿12,450</p></div>
+                <div class="stat-card" style="border-color: #10b981;"><h3>สินค้าใกล้หมด</h3><p>3 รายการ</p></div>
+                <div class="stat-card" style="border-color: #f59e0b;"><h3>โปรโมชันที่เปิดอยู่</h3><p>2</p></div>
+            </div>
+            <div class="content-box">
+                <h3>รายการขายล่าสุด</h3>
+                <table>
+                    <thead><tr><th>เวลา</th><th>รหัสสินค้า</th><th>จำนวน</th><th>ราคารวม</th></tr></thead>
+                    <tbody>
+                        <tr><td>10:30</td><td>P001</td><td>2</td><td>฿500</td></tr>
+                        <tr><td>09:15</td><td>P005</td><td>1</td><td>฿1,200</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
