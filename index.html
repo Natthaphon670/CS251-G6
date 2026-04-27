@@ -25,9 +25,9 @@
   </div>
 
   <nav class="sidebar-nav">
-    <a class="nav-link active" href="#">Homepage</a>
-    <a class="nav-link" href="#">Product Catalog</a>
-    <a class="nav-link" href="#">Shop Directory</a>
+    <a class="nav-link active" href="index.html">Homepage</a>
+    <a class="nav-link" href="ProductCatalog.html">Product Catalog</a>
+    <a class="nav-link" href="ShopDirectory.html">Shop Directory</a>
   </nav>
 
 </aside>
@@ -38,7 +38,7 @@
   <!-- TOPBAR -->
   <header class="topbar">
     <span class="topbar-title">Homepage</span>
-    <button class="btn-login" onclick="window.location.href='index.html'">Login</button>
+    <button class="btn-login" onclick="window.location.href='login.html'">Login</button>
   </header>
 
   <!-- CONTENT -->
@@ -170,9 +170,10 @@ initCarousel('prodTrack',  'prodLeft',   'prodRight');
 /* ── SIDEBAR ACTIVE ── */
 document.querySelectorAll('.nav-link').forEach(link => {
   link.addEventListener('click', e => {
-    e.preventDefault();
+    // ลบ e.preventDefault(); ออกไป
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     link.classList.add('active');
+    // ปล่อยให้ Browser ทำงานตาม href ปกติ
   });
 });
 </script>

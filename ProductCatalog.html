@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Department Store – All Item</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/ProductCatalog.css">
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </div>
+    <span class="logo-text">Department<br>Store</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="index.html">Homepage</a>
+    <a class="nav-link active" href="#">Product Catalog</a>
+     <a class="nav-link" href="ShopDirectory.html">Shop Directory</a>
+  </nav>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-title">All-Item</span>
+    <button class="btn-login" onclick="window.location.href='login.html'">Login</button>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- SEARCH BAR -->
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="menu-icon">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6"  x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </span>
+        <input type="text" id="searchInput" placeholder="Catagory/Product search"/>
+        <span class="search-icon">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div class="section-label">Products</div>
+
+    <!-- ============================================================
+         PRODUCT GRID
+         TODO (Backend): populate #productGrid dynamically from your
+         API/database. Each card HTML pattern:
+
+         <div class="prod-card">
+           <div class="card-topbar"></div>
+           <div class="card-img">
+             <img src="IMAGE_URL" alt="PRODUCT_NAME" />
+           </div>
+           <div class="card-btmbar"></div>
+           <p class="card-name">PRODUCT_NAME</p>
+         </div>
+
+         Or replace via JS:
+           document.getElementById('productGrid').innerHTML = cardsHTML;
+         ============================================================ -->
+    <div class="product-grid" id="productGrid">
+
+      <!-- Placeholder cards — replace with backend data -->
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+      <div class="prod-card placeholder">
+        <div class="card-topbar"></div>
+        <div class="card-img"><div class="card-shimmer"></div></div>
+        <div class="card-btmbar"></div>
+        <p class="card-name">ชื่อสินค้า</p>
+      </div>
+
+    </div>
+    <!-- /productGrid -->
+
+    <!-- PAGINATION -->
+    <!-- TODO (Backend): generate page buttons dynamically based on total pages -->
+    <div class="pagination" id="pagination">
+      <button class="page-btn" id="btn-prev" disabled>previous</button>
+      <button class="page-num active" data-page="1">1</button>
+      <button class="page-num" data-page="2">2</button>
+      <button class="page-num" data-page="3">3</button>
+      <button class="page-btn" id="btn-next">next</button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('.page-num').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.page-num').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
