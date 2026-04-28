@@ -218,3 +218,302 @@ input:focus {
 
 .status-success { background: #dcfce7; color: #15803d; }
 .status-pending { background: #fef9c3; color: #a16207; }
+
+/* ════════════════════════════════════════
+   Shared Page Header Helpers
+   ════════════════════════════════════════ */
+.page-wrapper { max-width: 760px; }
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.4rem;
+}
+
+.page-subtitle {
+    font-size: 0.92rem;
+    color: #94a3b8;
+    margin-bottom: 2rem;
+}
+
+/* ════════════════════════════════════════
+   Form Card  (Promotion page)
+   ════════════════════════════════════════ */
+.form-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    padding: 2.2rem 2.5rem;
+    border: 1px solid #f1f5f9;
+}
+
+.form-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.8rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.form-card-title i { color: var(--accent-color); }
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 1.4rem;
+}
+
+.form-group label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 0.75rem;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.95rem;
+    color: #334155;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    background: #fff;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+
+/* Input with leading icon */
+.input-with-icon { position: relative; }
+.input-with-icon input { padding-left: 2.6rem; }
+.input-with-icon i {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.88rem;
+}
+
+/* Input with trailing suffix label */
+.input-suffix { position: relative; }
+.input-suffix input { padding-right: 2.8rem; }
+.suffix-label {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+/* Full-width submit button */
+.btn-submit {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 0.85rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-submit:hover {
+    background: #2563eb;
+    box-shadow: 0 6px 18px rgba(37,99,235,0.25);
+    transform: translateY(-1px);
+}
+
+.btn-submit:active { transform: translateY(0); }
+
+/* ════════════════════════════════════════
+   Contract Card  (Sales & Contract page)
+   ════════════════════════════════════════ */
+.contract-card,
+.invoice-card {
+    background: #fff;
+    border-radius: 1.25rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    padding: 2rem 2.5rem;
+    border: 1px solid #f1f5f9;
+    margin-bottom: 1.8rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Top accent stripe */
+.contract-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.invoice-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ef4444, #f87171);
+    border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.contract-card-title,
+.invoice-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.contract-card-title i { color: #10b981; }
+.invoice-card-title i  { color: #ef4444; }
+
+/* Contract info 3-column grid */
+.contract-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.info-item .info-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item .info-value {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Status badges */
+.badge-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 0.3rem 0.85rem;
+    border-radius: 2rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-active::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+}
+
+.badge-unpaid {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-paid {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* Invoice table */
+.invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.invoice-table thead tr { border-bottom: 2px solid #f1f5f9; }
+
+.invoice-table th {
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    background: transparent;
+    border-bottom: none;
+}
+
+.invoice-table tbody tr {
+    border-bottom: 1px solid #f8fafc;
+    transition: background 0.15s;
+}
+
+.invoice-table tbody tr:last-child { border-bottom: none; }
+.invoice-table tbody tr:hover { background: #f8fafc; }
+
+.invoice-table td {
+    padding: 1rem;
+    font-size: 0.95rem;
+    color: #334155;
+    background: transparent;
+    border-bottom: none;
+}
+
+.inv-id {
+    font-weight: 600;
+    color: #1e293b;
+    font-family: monospace;
+    font-size: 0.95rem;
+}
+
+.amount {
+    font-weight: 700;
+    color: #0f172a;
+}

@@ -74,10 +74,16 @@ signInBtn.addEventListener('click', async (e) => {
   signInBtn.disabled = false;
 
   if (user === DEMO_USER && pass === DEMO_PASS) {
-    // ✅ Login success
+    // ✅ Login success — บันทึก session และ redirect ไปหน้า Tenant
+    sessionStorage.setItem('isLoggedIn', 'true');
+    sessionStorage.setItem('username', user);
+
     signInBtn.style.background = '#16a34a';
     signInBtn.querySelector('.btn-text').textContent = '✓  Success!';
-    setTimeout(() => alert('Login successful! (demo)'), 400);
+
+    setTimeout(() => {
+      window.location.href = 'tenant/index.html';
+    }, 600);
   } else {
     // ❌ Login failed
     errorText.textContent = 'Username or password is incorrect.';
