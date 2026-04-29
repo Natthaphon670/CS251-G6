@@ -1,4 +1,5 @@
 <?php
+
 // ตั้งค่า Header ให้รองรับ JSON และแก้ปัญหา CORS (Cross-Origin Resource Sharing)
 header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");

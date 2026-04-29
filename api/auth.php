@@ -1,41 +1,38 @@
 <?php
 
 /**
- * DEMO..
  * auth.php
  * ระบบ Authentication & Authorization
- * Roles: admin, tenant, guest (ไม่ได้ login)
+ * ปรับปรุงให้สอดคล้องกับฐานข้อมูล DepartmentStoreDB
+ * (รองรับการเชื่อมโยง AccountID กับ Employee และ Tenant)
  */
+
+require_once 'db.php';
 
 session_start();
 
 // CORS HEADERS — อนุญาตให้ Frontend เรียก API ได้
-// ปรับ Allow-Origin ให้ตรงกับ port ของ Frontend
-header('Access-Control-Allow-Origin: http://localhost:3000');
+header('Access-Control-Allow-Origin: http://localhost:3000'); 
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
-// Pre-flight request จาก browser → ตอบ 200 แล้วจบ
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-
-// CONFIG: เชื่อมต่อฐานข้อมูล (ปรับค่าให้ตรงกับของคุณ)
+// CONFIG
 define('DB_HOST',    'localhost');
-define('DB_NAME',    'your_database');  // ← เปลี่ยนเป็นชื่อ DB จริง
+define('DB_NAME',    'DepartmentStoreDB');  
 define('DB_USER',    'root');
-define('DB_PASS',    '');               // ← ใส่รหัสผ่านถ้ามี
+define('DB_PASS',    '');               
 define('DB_CHARSET', 'utf8mb4');
 
-// Rate Limit: จำนวนครั้งสูงสุดและช่วงเวลา (วินาที)
 define('MAX_LOGIN_ATTEMPTS', 5);
-define('LOCKOUT_DURATION',   900); // 15 นาที
+define('LOCKOUT_DURATION',   900); 
 
-
-// DATABASE: Singleton PDO Connection
+// DATABASE
 function getDB(): PDO {
     static $pdo = null;
     if ($pdo === null) {
@@ -48,8 +45,7 @@ function getDB(): PDO {
     return $pdo;
 }
 
-
-// HELPER: ส่ง JSON Response พร้อม HTTP Status Code
+// HELPER
 function jsonResponse(int $code, string $message, array $data = []): void {
     http_response_code($code);
     header('Content-Type: application/json');
@@ -61,32 +57,30 @@ function jsonResponse(int $code, string $message, array $data = []): void {
     exit;
 }
 
-
-// AUTH HELPERS: ดึงข้อมูล / ตรวจสถานะ Session
 function getCurrentRole(): string {
     return $_SESSION['role'] ?? 'guest';
 }
 
 function getCurrentUser(): ?array {
-    if (!isset($_SESSION['user_id'])) return null;
+    if (!isset($_SESSION['account_id'])) return null;
+    
+    // [แก้ไข] เพิ่มการ Return ข้อมูล Employee และ Tenant กลับไปให้ Frontend
     return [
-        'id'    => $_SESSION['user_id'],
-        'name'  => $_SESSION['name'],
-        'email' => $_SESSION['email'],
-        'role'  => $_SESSION['role'],
+        'account_id'    => $_SESSION['account_id'],
+        'username'      => $_SESSION['username'],
+        'role'          => $_SESSION['role'],
+        'employee_id'   => $_SESSION['employee_id'] ?? null,
+        'employee_name' => $_SESSION['employee_name'] ?? null,
+        'tenant_id'     => $_SESSION['tenant_id'] ?? null,
+        'tenant_name'   => $_SESSION['tenant_name'] ?? null,
     ];
 }
 
 function isLoggedIn(): bool {
-    return isset($_SESSION['user_id']);
+    return isset($_SESSION['account_id']);
 }
 
-
-// AUTHORIZATION: ตรวจสอบสิทธิ์การเข้าถึง
-//
-//   admin  → เข้าถึงได้ทุกส่วน
-//   tenant → เข้าถึงได้เฉพาะส่วนผู้เช่า
-//   guest  → เข้าถึงได้เฉพาะ public
+// AUTHORIZATION
 function requireLogin(): void {
     if (!isLoggedIn()) {
         jsonResponse(401, 'กรุณาเข้าสู่ระบบก่อน');
@@ -109,21 +103,13 @@ function requireTenant(): void {
     requireRole('admin', 'tenant');
 }
 
-
-// CSRF PROTECTION
-/**
- * สร้าง CSRF Token และเก็บไว้ใน Session
- * เรียกหลัง login สำเร็จเพื่อให้ Frontend นำ token ไปแนบทุก request
- */
+// CSRF
 function generateCsrfToken(): string {
     $token = bin2hex(random_bytes(32));
     $_SESSION['csrf_token'] = $token;
     return $token;
 }
-/**
- * ตรวจ CSRF Token จาก Header X-CSRF-Token
- * เรียกใช้ใน endpoint ที่เปลี่ยนแปลงข้อมูล (POST ที่ sensitive)
- */
+
 function verifyCsrf(): void {
     $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
     if (empty($token) || $token !== ($_SESSION['csrf_token'] ?? '')) {
@@ -131,13 +117,7 @@ function verifyCsrf(): void {
     }
 }
 
-
-// RATE LIMITING: ป้องกัน Brute Force Login
-// นับจำนวนครั้งที่ login ผิดใน Session
-/**
- * ตรวจว่าถูกล็อกอยู่หรือไม่
- * ถ้าครบ MAX_LOGIN_ATTEMPTS และยังอยู่ใน LOCKOUT_DURATION → บล็อก
- */
+// RATE LIMIT
 function checkLoginRateLimit(): void {
     $attempts = $_SESSION['login_attempts'] ?? 0;
     $lastTime = $_SESSION['login_last_attempt'] ?? 0;
@@ -151,109 +131,110 @@ function checkLoginRateLimit(): void {
             jsonResponse(429, "พยายาม login เกินจำนวนที่กำหนด กรุณาลองใหม่ใน {$minutes} นาที");
         }
 
-        // พ้นช่วง lockout แล้ว → รีเซ็ตตัวนับ
         $_SESSION['login_attempts']      = 0;
         $_SESSION['login_last_attempt']  = 0;
     }
 }
 
-/** เพิ่มตัวนับเมื่อ login ผิด */
 function incrementLoginFailure(): void {
     $_SESSION['login_attempts']     = ($_SESSION['login_attempts'] ?? 0) + 1;
     $_SESSION['login_last_attempt'] = time();
 }
 
-/** รีเซ็ตตัวนับเมื่อ login สำเร็จ */
 function resetLoginAttempts(): void {
     $_SESSION['login_attempts']     = 0;
     $_SESSION['login_last_attempt'] = 0;
 }
 
-
 // LOGIN
-// POST /auth.php?action=login
-// Body (JSON): { "email": "...", "password": "..." }
 function handleLogin(): void {
 
-    // 1. ตรวจ Rate Limit ก่อนทำอะไร
     checkLoginRateLimit();
 
-    // 2. รับและ validate input
     $input = json_decode(file_get_contents('php://input'), true);
 
-    $email    = trim($input['email']    ?? '');
+    $username = trim($input['username'] ?? '');
     $password = trim($input['password'] ?? '');
 
-    if (!$email || !$password) {
-        jsonResponse(400, 'กรุณากรอก email และ password');
+    if (!$username || !$password) {
+        jsonResponse(400, 'กรุณากรอก Username และ Password');
     }
 
-    // ตรวจรูปแบบ email
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        jsonResponse(400, 'รูปแบบ email ไม่ถูกต้อง');
-    }
-
-    // ตรวจความยาว password เบื้องต้น
     if (strlen($password) < 6) {
-        jsonResponse(400, 'password ต้องมีอย่างน้อย 6 ตัวอักษร');
+        jsonResponse(400, 'Password ต้องมีอย่างน้อย 6 ตัวอักษร');
     }
 
-    // 3. ดึงข้อมูลจาก DB
     $pdo  = getDB();
-    $stmt = $pdo->prepare("SELECT id, name, email, password, role FROM users WHERE email = ? LIMIT 1");
-    $stmt->execute([$email]);
+    
+    // [แก้ไข] เปลี่ยน Query เป็น LEFT JOIN เพื่อดึงข้อมูล Employee และ Tenant ออกมาด้วย
+    // หาก AccountID นั้นเชื่อมกับ Employee ข้อมูล e.EmployeeID จะมีค่า
+    // หาก AccountID นั้นเชื่อมกับ Tenant ข้อมูล t.TenantID จะมีค่า
+    $sql = "
+        SELECT 
+            u.AccountID, u.Username, u.Password, u.Role,
+            e.EmployeeID, e.EmployeeName,
+            t.TenantID, t.TenantName
+        FROM UserAccount u
+        LEFT JOIN Employee e ON u.AccountID = e.AccountID
+        LEFT JOIN Tenant t ON u.AccountID = t.AccountID
+        WHERE u.Username = ? 
+        LIMIT 1
+    ";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    // 4. ตรวจ password (ใช้ข้อความ error เดียวกันเพื่อไม่ให้รู้ว่า email มีหรือไม่)
-    if (!$user || !password_verify($password, $user['password'])) {
-        incrementLoginFailure(); // เพิ่ม counter เมื่อผิด
-        jsonResponse(401, 'email หรือ password ไม่ถูกต้อง');
+    if (!$user || !password_verify($password, $user['Password'])) {
+        incrementLoginFailure();
+        jsonResponse(401, 'Username หรือ Password ไม่ถูกต้อง');
     }
 
-    // 5. Login สำเร็จ → สร้าง Session ใหม่เพื่อป้องกัน Session Fixation
     session_regenerate_id(true);
 
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['name']    = $user['name'];
-    $_SESSION['email']   = $user['email'];
-    $_SESSION['role']    = $user['role'];
+    // เก็บ Session หลัก
+    $_SESSION['account_id'] = $user['AccountID'];
+    $_SESSION['username']   = $user['Username'];
+    $_SESSION['role']       = $user['Role'];
+    
+    // [แก้ไข] เก็บ Session โปรไฟล์ (ถ้ามีข้อมูลจะเก็บค่า ถ้าไม่มีจะเป็น null)
+    $_SESSION['employee_id']   = $user['EmployeeID'];
+    $_SESSION['employee_name'] = $user['EmployeeName'];
+    $_SESSION['tenant_id']     = $user['TenantID'];
+    $_SESSION['tenant_name']   = $user['TenantName'];
 
-    // รีเซ็ต rate limit และสร้าง CSRF Token
     resetLoginAttempts();
     $csrfToken = generateCsrfToken();
 
+    // [แก้ไข] ส่งข้อมูลทั้งหมดให้ Frontend แสดงผลได้ทันที
     jsonResponse(200, 'เข้าสู่ระบบสำเร็จ', [
         'user' => [
-            'id'    => $user['id'],
-            'name'  => $user['name'],
-            'email' => $user['email'],
-            'role'  => $user['role'],
+            'account_id'    => $user['AccountID'],
+            'username'      => $user['Username'],
+            'role'          => $user['Role'],
+            'employee_id'   => $user['EmployeeID'],
+            'employee_name' => $user['EmployeeName'],
+            'tenant_id'     => $user['TenantID'],
+            'tenant_name'   => $user['TenantName'],
         ],
-        'csrf_token' => $csrfToken, // ส่ง token กลับให้ Frontend เก็บไว้ใช้
+        'csrf_token' => $csrfToken,
     ]);
 }
 
-
 // LOGOUT
-// POST /auth.php?action=logout
 function handleLogout(): void {
     session_unset();
     session_destroy();
     jsonResponse(200, 'ออกจากระบบสำเร็จ');
 }
 
-
-// ดึงข้อมูลผู้ใช้ปัจจุบัน
-// GET /auth.php?action=me
+// GET PROFILE
 function handleMe(): void {
     requireLogin();
     jsonResponse(200, 'ดึงข้อมูลสำเร็จ', ['user' => getCurrentUser()]);
 }
 
-
 // ROUTER
-// Guard: รัน Router เฉพาะเมื่อเรียก auth.php โดยตรง
-// ป้องกัน Router ทำงานซ้ำเมื่อไฟล์อื่น require_once ไฟล์นี้
 if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
 
     $action = $_GET['action'] ?? '';

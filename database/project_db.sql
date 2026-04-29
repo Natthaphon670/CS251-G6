@@ -165,3 +165,5 @@ CREATE TABLE Cheapen (
     FOREIGN KEY (ProductID) REFERENCES Product(ProductID) ON DELETE CASCADE,
     FOREIGN KEY (PromotionID) REFERENCES Promotion(PromotionID) ON DELETE CASCADE
 );
+
+
