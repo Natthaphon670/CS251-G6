@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lease Contract - Department Store</title>
+    <link rel="stylesheet" href="../css/admin_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body data-page-role="admin-only">
+    <aside class="sidebar">
+        <div class="sidebar-logo">DEPARTMENT STORE</div>
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-link" data-allowed="all">Dashboard</a>
+            <a href="employee.html" class="nav-link" data-allowed="admin-only">Employee Management</a>
+            <a href="tenant.html" class="nav-link" data-allowed="admin-only">Tenant Directory</a>
+            <a href="space.html" class="nav-link" data-allowed="all">Space Management</a>
+            <a href="lease.html" class="nav-link active" data-allowed="admin-only">Lease Contract</a>
+            <a href="warehouse.html" class="nav-link" data-allowed="all">Warehouse</a>
+            <a href="sales.html" class="nav-link" data-allowed="all">Sales Management</a>
+            <a href="reports.html" class="nav-link" data-allowed="employee-only">Report Generation</a>
+            <a href="invoice.html" class="nav-link" data-allowed="all">Invoice</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="page-info"><h2>Lease Contract (จัดการสัญญาเช่า)</h2></div>
+            <div class="header-actions">
+                <div class="profile-menu" onclick="toggleDropdown(event)">
+                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile" class="profile-avatar">
+                    <span class="admin-name">User</span>
+                    <span class="dropdown-icon">▼</span>
+                    <div class="dropdown-content" id="profileDropdown">
+                        <a href="javascript:handleLogout()" class="logout-link">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <section class="content-section">
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>ข้อมูลสัญญาเช่าพื้นที่</h3>
+                        <button class="btn btn-primary" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">+ ร่างสัญญาใหม่</button>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background-color: #f4f4f4; border-bottom: 2px solid #ddd;">
+                                <th style="padding: 12px;">เลขที่สัญญา (Contract ID)</th>
+                                <th style="padding: 12px;">ชื่อร้านค้า (Shop Name)</th>
+                                <th style="padding: 12px;">วันที่เริ่มต้น</th>
+                                <th style="padding: 12px;">วันที่สิ้นสุด</th>
+                                <th style="padding: 12px;">สถานะสัญญา</th>
+                                <th style="padding: 12px;">เอกสาร</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">LC-2024-001</td>
+                                <td style="padding: 12px;">KFC (สาขา 1)</td>
+                                <td style="padding: 12px;">01/01/2024</td>
+                                <td style="padding: 12px;">31/12/2025</td>
+                                <td style="padding: 12px;"><span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">ปกติ (Active)</span></td>
+                                <td style="padding: 12px;"><a href="#" style="color: #007bff;">📄 ดู PDF</a></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">LC-2023-112</td>
+                                <td style="padding: 12px;">ร้านหนังสือ Readme</td>
+                                <td style="padding: 12px;">01/06/2023</td>
+                                <td style="padding: 12px;">31/05/2024</td>
+                                <td style="padding: 12px;"><span style="background: #ffc107; color: black; padding: 5px 10px; border-radius: 20px; font-size: 12px;">ใกล้หมดอายุ</span></td>
+                                <td style="padding: 12px;"><a href="#" style="color: #007bff;">📄 ดู PDF</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="../js/admin.js"></script>
+    <script src="admin_auth.js"></script>
+</body>
+</html>

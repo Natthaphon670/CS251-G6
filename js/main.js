@@ -131,3 +131,10 @@ guestBtn.addEventListener('click', () => {
     alert('Continuing as Guest! (demo)');
   }, 900);
 });
+
+// ตัวอย่างในไฟล์ js/main.js
+if (loginSuccess) {
+    sessionStorage.setItem('role', response.role); // 'Admin' หรือ 'Employee'
+    sessionStorage.setItem('username', response.username);
+    window.location.href = 'admin/dashboard.html';
+}

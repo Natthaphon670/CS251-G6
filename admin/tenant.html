@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Tenant Directory</title>
+    <link rel="stylesheet" href="../css/admin_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body data-page-role="admin-only">
+   <aside class="sidebar">
+        <div class="sidebar-logo"> DEPARTMENT STORE</div>
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-link" data-allowed="all">Dashboard</a>
+            <a href="employee.html" class="nav-link" data-allowed="admin-only">Employee Management</a>
+            <a href="tenant.html" class="nav-link active" data-allowed="admin-only">Tenant Directory</a>
+            <a href="space.html" class="nav-link" data-allowed="all">Space Management</a>
+            <a href="lease.html" class="nav-link" data-allowed="admin-only">Lease Contract</a>
+            <a href="warehouse.html" class="nav-link" data-allowed="all">Warehouse</a>
+            <a href="sales.html" class="nav-link" data-allowed="all">Sales Management</a>
+            <a href="reports.html" class="nav-link" data-allowed="employee-only">Report Generation</a>
+            <a href="invoice.html" class="nav-link" data-allowed="all">Invoice</a>
+        </nav>
+    </aside>
+    
+    <main class="main-content">
+         <header class="topbar">
+            <div class="page-info"><h2>Employee Management</h2></div>
+            <div class="header-actions">
+                <div class="profile-menu">
+                    <div class="profile-trigger" onclick="toggleDropdown(event)">
+                        <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile" class="profile-avatar">
+                        <span class="admin-name">User</span>
+                        <span class="dropdown-icon">▼</span>
+                    </div>
+                    <div class="dropdown-content" id="profileDropdown">
+                        <a href="../login.html" class="logout-link"><span>🚪</span> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="content-wrapper">
+            <div class="card">
+                <h3>รายชื่อผู้เช่าร้านค้า</h3>
+                <table>
+                    <thead><tr><th>Shop Name</th><th>Category</th><th>Contact Person</th><th>Email</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <tr><td>Stussy Shop</td><td>Clothing</td><td>Kantanop</td><td>info@stussy.com</td><td><button class="btn-edit">แก้ไข</button></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script src="../js/admin.js"></script>
+    <script src="admin_auth.js"></script>
+</body>
+</html>

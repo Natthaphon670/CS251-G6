@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Management - Department Store</title>
+    <link rel="stylesheet" href="../css/admin_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body data-page-role="all">
+    <aside class="sidebar">
+        <div class="sidebar-logo">DEPARTMENT STORE</div>
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-link" data-allowed="all">Dashboard</a>
+            <a href="employee.html" class="nav-link" data-allowed="admin-only">Employee Management</a>
+            <a href="tenant.html" class="nav-link" data-allowed="admin-only">Tenant Directory</a>
+            <a href="space.html" class="nav-link active" data-allowed="all">Space Management</a>
+            <a href="lease.html" class="nav-link" data-allowed="admin-only">Lease Contract</a>
+            <a href="warehouse.html" class="nav-link" data-allowed="all">Warehouse</a>
+            <a href="sales.html" class="nav-link" data-allowed="all">Sales Management</a>
+            <a href="reports.html" class="nav-link" data-allowed="employee-only">Report Generation</a>
+            <a href="invoice.html" class="nav-link" data-allowed="all">Invoice</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="page-info"><h2>Space Management (จัดการพื้นที่)</h2></div>
+            <div class="header-actions">
+                <div class="profile-menu" onclick="toggleDropdown(event)">
+                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile" class="profile-avatar">
+                    <span class="admin-name">User</span>
+                    <span class="dropdown-icon">▼</span>
+                    <div class="dropdown-content" id="profileDropdown">
+                        <a href="javascript:handleLogout()" class="logout-link">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <section class="content-section">
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>รายชื่อพื้นที่เช่าภายในห้าง</h3>
+                        <button class="btn btn-primary" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">+ เพิ่มพื้นที่ใหม่</button>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background-color: #f4f4f4; border-bottom: 2px solid #ddd;">
+                                <th style="padding: 12px;">รหัสพื้นที่ (Space ID)</th>
+                                <th style="padding: 12px;">ชั้น (Floor)</th>
+                                <th style="padding: 12px;">โซน (Zone)</th>
+                                <th style="padding: 12px;">ขนาด (ตร.ม.)</th>
+                                <th style="padding: 12px;">สถานะ</th>
+                                <th style="padding: 12px;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">S1-001</td>
+                                <td style="padding: 12px;">1</td>
+                                <td style="padding: 12px;">Fashion Zone</td>
+                                <td style="padding: 12px;">50.5</td>
+                                <td style="padding: 12px;"><span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">ถูกเช่าแล้ว</span></td>
+                                <td style="padding: 12px;">
+                                    <button style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">S2-015</td>
+                                <td style="padding: 12px;">2</td>
+                                <td style="padding: 12px;">Food Court</td>
+                                <td style="padding: 12px;">30.0</td>
+                                <td style="padding: 12px;"><span style="background: #dc3545; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">ว่าง</span></td>
+                                <td style="padding: 12px;">
+                                    <button style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="../js/admin.js"></script>
+    <script src="admin_auth.js"></script>
+</body>
+</html>

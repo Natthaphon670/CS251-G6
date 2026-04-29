@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse - Department Store</title>
+    <link rel="stylesheet" href="../css/admin_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body data-page-role="all">
+    <aside class="sidebar">
+        <div class="sidebar-logo">DEPARTMENT STORE</div>
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-link" data-allowed="all">Dashboard</a>
+            <a href="employee.html" class="nav-link" data-allowed="admin-only">Employee Management</a>
+            <a href="tenant.html" class="nav-link" data-allowed="admin-only">Tenant Directory</a>
+            <a href="space.html" class="nav-link" data-allowed="all">Space Management</a>
+            <a href="lease.html" class="nav-link" data-allowed="admin-only">Lease Contract</a>
+            <a href="warehouse.html" class="nav-link active" data-allowed="all">Warehouse</a>
+            <a href="sales.html" class="nav-link" data-allowed="all">Sales Management</a>
+            <a href="reports.html" class="nav-link" data-allowed="employee-only">Report Generation</a>
+            <a href="invoice.html" class="nav-link" data-allowed="all">Invoice</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="page-info"><h2>Warehouse (คลังสินค้า)</h2></div>
+            <div class="header-actions">
+                <div class="profile-menu" onclick="toggleDropdown(event)">
+                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile" class="profile-avatar">
+                    <span class="admin-name">User</span>
+                    <span class="dropdown-icon">▼</span>
+                    <div class="dropdown-content" id="profileDropdown">
+                        <a href="javascript:handleLogout()" class="logout-link">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <section class="content-section">
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>สต็อกสินค้าส่วนกลาง</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" placeholder="ค้นหาสินค้า..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <button class="btn btn-primary" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">+ เพิ่มสต็อก</button>
+                        </div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background-color: #f4f4f4; border-bottom: 2px solid #ddd;">
+                                <th style="padding: 12px;">รหัสสินค้า (Item Code)</th>
+                                <th style="padding: 12px;">ชื่อสินค้า (Product)</th>
+                                <th style="padding: 12px;">หมวดหมู่ (Category)</th>
+                                <th style="padding: 12px;">จำนวนคงเหลือ (Qty)</th>
+                                <th style="padding: 12px;">เจ้าของ (Shop/Vendor)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">ITM-00921</td>
+                                <td style="padding: 12px;">เสื้อยืด Stussy สีดำ M</td>
+                                <td style="padding: 12px;">เสื้อผ้าแฟชั่น</td>
+                                <td style="padding: 12px;"><strong>150</strong></td>
+                                <td style="padding: 12px;">Stussy Shop</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 12px;">ITM-00922</td>
+                                <td style="padding: 12px;">รองเท้า Nike Air Max 42</td>
+                                <td style="padding: 12px;">รองเท้า</td>
+                                <td style="padding: 12px;"><strong style="color: red;">12</strong></td>
+                                <td style="padding: 12px;">Super Sports</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="../js/admin.js"></script>
+    <script src="admin_auth.js"></script>
+</body>
+</html>

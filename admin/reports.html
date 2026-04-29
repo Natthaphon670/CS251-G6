@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Generation - Department Store</title>
+    <link rel="stylesheet" href="../css/admin_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body data-page-role="employee-only">
+    <aside class="sidebar">
+        <div class="sidebar-logo">DEPARTMENT STORE</div>
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-link" data-allowed="all">Dashboard</a>
+            <a href="employee.html" class="nav-link" data-allowed="admin-only">Employee Management</a>
+            <a href="tenant.html" class="nav-link" data-allowed="admin-only">Tenant Directory</a>
+            <a href="space.html" class="nav-link" data-allowed="all">Space Management</a>
+            <a href="lease.html" class="nav-link" data-allowed="admin-only">Lease Contract</a>
+            <a href="warehouse.html" class="nav-link" data-allowed="all">Warehouse</a>
+            <a href="sales.html" class="nav-link" data-allowed="all">Sales Management</a>
+            <a href="reports.html" class="nav-link active" data-allowed="employee-only">Report Generation</a>
+            <a href="invoice.html" class="nav-link" data-allowed="all">Invoice</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="page-info"><h2>Report Generation (สร้างรายงาน)</h2></div>
+            <div class="header-actions">
+                <div class="profile-menu" onclick="toggleDropdown(event)">
+                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile" class="profile-avatar">
+                    <span class="admin-name">User</span>
+                    <span class="dropdown-icon">▼</span>
+                    <div class="dropdown-content" id="profileDropdown">
+                        <a href="javascript:handleLogout()" class="logout-link">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <section class="content-section">
+                <div class="card" style="max-width: 800px; margin: 0 auto;">
+                    <h3 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">เครื่องมือสร้างรายงาน (สำหรับพนักงาน)</h3>
+                    
+                    <form style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">ประเภทรายงาน:</label>
+                            <select style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                                <option value="sales_daily">รายงานยอดขายประจำวัน</option>
+                                <option value="sales_monthly">รายงานยอดขายประจำเดือน</option>
+                                <option value="space_usage">รายงานสถานะพื้นที่เช่า</option>
+                                <option value="inventory_stock">รายงานสินค้าคงคลัง</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 20px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500;">ตั้งแต่วันที่:</label>
+                                <input type="date" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500;">ถึงวันที่:</label>
+                                <input type="date" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">รูปแบบไฟล์ออก (Export Format):</label>
+                            <select style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                                <option value="pdf">📄 PDF Document (.pdf)</option>
+                                <option value="excel">📊 Excel Spreadsheet (.xlsx)</option>
+                                <option value="csv">📑 CSV File (.csv)</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" style="padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; margin-top: 10px;">
+                            สร้างและดาวน์โหลดรายงาน
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="../js/admin.js"></script>
+    <script src="admin_auth.js"></script>
+</body>
+</html>
