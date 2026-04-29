@@ -56,7 +56,9 @@
           </svg>
         </button>
         <div class="carousel-viewport">
-          <div class="carousel-track" id="promoTrack"></div>
+          <div class="carousel-track" id="promoTrack">
+              <!-- ข้อมูลโปรโมชันจะถูกแทรกที่นี่ผ่าน JavaScript -->
+          </div>
         </div>
         <button class="arrow-btn" id="promoRight" aria-label="Next">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -76,7 +78,9 @@
           </svg>
         </button>
         <div class="carousel-viewport">
-          <div class="carousel-track" id="prodTrack"></div>
+          <div class="carousel-track" id="prodTrack">
+              <!-- ข้อมูลสินค้าจะถูกแทรกที่นี่ผ่าน JavaScript -->
+          </div>
         </div>
         <button class="arrow-btn" id="prodRight" aria-label="Next">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -89,93 +93,6 @@
   </main>
 </div>
 
-<script>
-/* ── DATA ── */
-const promoData = [
-  { exp: '11/11/26' }, { exp: '11/11/26' },
-  { exp: '11/11/26' }, { exp: '11/11/26' },
-  { exp: '30/06/26' }, { exp: '31/12/26' },
-];
-
-const productData = [
-  { name: 'ประตู',    emoji: '🚪' },
-  { name: 'ประตู',    emoji: '🚪' },
-  { name: 'ประตู',    emoji: '🚪' },
-  { name: 'ประตู',    emoji: '🚪' },
-  { name: 'หน้าต่าง', emoji: '🪟' },
-  { name: 'โซฟา',    emoji: '🛋️' },
-];
-
-/* ── BUILD PROMO CARDS ── */
-const promoTrack = document.getElementById('promoTrack');
-promoData.forEach(p => {
-  const card = document.createElement('div');
-  card.className = 'promo-card';
-  card.innerHTML = `
-    <div class="promo-img-area">
-      <div class="promo-badge">Promotion</div>
-    </div>
-    <div class="promo-footer">
-      <span class="exp-label">Expired Date:${p.exp}</span>
-    </div>`;
-  promoTrack.appendChild(card);
-});
-
-/* ── BUILD PRODUCT CARDS ── */
-const prodTrack = document.getElementById('prodTrack');
-productData.forEach(p => {
-  const card = document.createElement('div');
-  card.className = 'prod-card';
-  card.innerHTML = `
-    <div class="prod-img-area">
-      <span class="prod-emoji">${p.emoji}</span>
-    </div>
-    <div class="prod-footer">
-      <span class="prod-name">${p.name}</span>
-    </div>`;
-  prodTrack.appendChild(card);
-});
-
-/* ── CAROUSEL ENGINE ── */
-function initCarousel(trackId, leftId, rightId) {
-  const track   = document.getElementById(trackId);
-  const btnL    = document.getElementById(leftId);
-  const btnR    = document.getElementById(rightId);
-  const VISIBLE = 4;
-  let   step    = 0;
-
-  function getCardW() {
-    const c = track.children[0];
-    return c ? c.offsetWidth + 12 : 0;
-  }
-  function maxStep() { return Math.max(0, track.children.length - VISIBLE); }
-
-  function render() {
-    const max = maxStep();
-    step = Math.max(0, Math.min(step, max));
-    track.style.transform = `translateX(-${step * getCardW()}px)`;
-    btnL.disabled = step === 0;
-    btnR.disabled = step >= max;
-  }
-
-  btnL.addEventListener('click',  () => { step--; render(); });
-  btnR.addEventListener('click',  () => { step++; render(); });
-  window.addEventListener('resize', render);
-  render();
-}
-
-initCarousel('promoTrack', 'promoLeft',  'promoRight');
-initCarousel('prodTrack',  'prodLeft',   'prodRight');
-
-/* ── SIDEBAR ACTIVE ── */
-document.querySelectorAll('.nav-link').forEach(link => {
-  link.addEventListener('click', e => {
-    // ลบ e.preventDefault(); ออกไป
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    link.classList.add('active');
-    // ปล่อยให้ Browser ทำงานตาม href ปกติ
-  });
-});
-</script>
+<script src="js/public.js"></script>
 </body>
 </html>
