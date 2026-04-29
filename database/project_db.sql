@@ -16,15 +16,6 @@ CREATE TABLE UserAccount (
     Role VARCHAR(20) NOT NULL -- เก็บค่าเป็น 'Admin', 'Employee', หรือ 'Tenant'
 );
 
--- ตารางพนักงาน (รวม Admin และพนักงานทั่วไป)
-CREATE TABLE Employee (
-    EmployeeID VARCHAR(6) PRIMARY KEY,
-    EmployeeName VARCHAR(100) NOT NULL,
-    Position VARCHAR(50),
-    EmTelephone VARCHAR(12),
-    AccountID VARCHAR(6), -- เชื่อมไปยังบัญชีผู้ใช้เพื่อ Login
-    FOREIGN KEY (AccountID) REFERENCES UserAccount(AccountID) ON DELETE SET NULL
-);
 
 -- ตารางพื้นที่เช่า
 CREATE TABLE RentalSpace (
@@ -65,6 +56,16 @@ CREATE TABLE Warehouse (
 -- ========================================================
 -- 3. ตารางที่มีการเชื่อมโยง Foreign Key (Dependent Tables)
 -- ========================================================
+
+-- ตารางพนักงาน (รวม Admin และพนักงานทั่วไป)
+CREATE TABLE Employee (
+    EmployeeID VARCHAR(6) PRIMARY KEY,
+    EmployeeName VARCHAR(100) NOT NULL,
+    Position VARCHAR(50),
+    EmTelephone VARCHAR(12),
+    AccountID VARCHAR(6), -- เชื่อมไปยังบัญชีผู้ใช้เพื่อ Login
+    FOREIGN KEY (AccountID) REFERENCES UserAccount(AccountID) ON DELETE SET NULL
+);
 
 -- ตารางผู้เช่าร้านค้า
 CREATE TABLE Tenant (
