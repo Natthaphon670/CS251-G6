@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('invoiceTableBody')) loadInvoices();
     if (document.getElementById('salesTableBody')) loadSales();
     if (document.getElementById('reportTableBody')) loadReports();
+    if (document.getElementById('warehouseTableBody')) loadWarehouse();
 });
 
 // ==========================================
@@ -188,6 +189,23 @@ async function loadReports() {
                 <td style="padding: 12px;">${rep.ReportDate}</td>
                 <td style="padding: 12px;">${rep.EmployeeName}</td>
                 <td style="padding: 12px;"><button style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">ดาวน์โหลด</button></td>
+            </tr>
+        `).join('');
+    }
+}
+
+// --- Warehouse (คลังสินค้าส่วนกลาง) ---
+async function loadWarehouse() {
+    const res = await callAdminAPI('get_warehouse');
+    const tbody = document.getElementById('warehouseTableBody');
+    if (res.status === 'success' && tbody) {
+        tbody.innerHTML = res.data.map(item => `
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 12px;">${item.ProductID}</td>
+                <td style="padding: 12px;">${item.ProductName}</td>
+                <td style="padding: 12px;">${item.CategoryName || '-'}</td>
+                <td style="padding: 12px;"><strong style="${item.WarehouseQuantity < 50 ? 'color: red;' : ''}">${item.WarehouseQuantity}</strong></td>
+                <td style="padding: 12px;">${item.SupplierName || 'ทั่วไป'}</td>
             </tr>
         `).join('');
     }

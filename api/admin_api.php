@@ -262,8 +262,23 @@ try {
             $stmt->execute([$reportID, $reportName, $reportDate, $employeeID]);
             $response = ["status" => "success", "message" => "บันทึกประวัติการออกรายงานสำเร็จ"];
             break;
-    }
 
+    case 'get_warehouse':
+            // JOIN หลายตารางเพื่อดึงข้อมูล Product, Warehouse, Category และ Supplier มาแสดงพร้อมกัน
+            $sql = "SELECT p.ProductID, p.ProductName, w.WarehouseQuantity, c.CategoryName, s.SupplierName 
+                    FROM Product p
+                    JOIN Store st ON p.ProductID = st.ProductID
+                    JOIN Warehouse w ON st.WarehouseID = w.WarehouseID
+                    LEFT JOIN Categorize ct ON p.ProductID = ct.ProductID
+                    LEFT JOIN Category c ON ct.CategoryID = c.CategoryID
+                    LEFT JOIN Supply sup ON p.ProductID = sup.ProductID
+                    LEFT JOIN Supplier s ON sup.SupplierID = s.SupplierID
+                    ORDER BY p.ProductID ASC";
+            $stmt = $conn->query($sql);
+            $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+            break;
+    }
+    
 } catch (PDOException $e) {
     // ดักจับ Error จาก Database
     if ($conn->inTransaction()) {
