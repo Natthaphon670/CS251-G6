@@ -45,22 +45,22 @@
                     <div class="card stat-card sales">
                         <div class="stat-icon">💰</div>
                         <div class="stat-info">
-                            <h3>Total Sales</h3><p>฿ 3,250,000</p>
-                            <span class="trend down">▼ 0.8% this month</span>
+                            <h3>Total Sales</h3><p id="total_sales">฿ 0</p>
+                            <span id="sales_trend" class="trend">0% this month</span>
                         </div>
                     </div>
                     <div class="card stat-card rentals">
                         <div class="stat-icon">🏢</div>
                         <div class="stat-info">
-                            <h3>Rental Stores</h3><p>28</p>
-                            <span class="trend up">▲ 2.5% this month</span>
+                            <h3>Rental Stores</h3><p id="total_tenants">0</p>
+                            <span class="trend up">▲ Active</span>
                         </div>
                     </div>
                     <div class="card stat-card products">
                         <div class="stat-icon">📦</div>
                         <div class="stat-info">
-                            <h3>Total Products</h3><p>12,350</p>
-                            <span class="trend up">▲ 4.1% this month</span>
+                            <h3>Total Products</h3><p id="total_products">0</p>
+                            <span class="trend up">▲ In Stock</span>
                         </div>
                     </div>
                 </div>
@@ -75,9 +75,9 @@
                     <div class="card summary-box">
                         <h3>สรุปภาพรวมข้อมูล</h3>
                         <ul class="summary-list">
-                            <li>สัญญาใกล้หมดอายุ: <strong>5 ร้าน</strong></li>
-                            <li>พื้นที่ว่างคงเหลือ: <strong>12 โซน</strong></li>
-                            <li>ใบแจ้งหนี้ค้างชำระ: <strong>฿ 150,000</strong></li>
+                            <li>สัญญาใกล้หมดอายุ: <strong id="summary_expiring">0 ร้าน</strong></li>
+                            <li>พื้นที่ว่างคงเหลือ: <strong id="summary_freespace">0 โซน</strong></li>
+                            <li>ใบแจ้งหนี้ค้างชำระ: <strong id="summary_unpaid">฿ 0</strong></li>
                         </ul>
                     </div>
                 </div>

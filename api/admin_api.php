@@ -21,24 +21,48 @@ try {
         // ระบบที่ 1: Dashboard (สรุปข้อมูลหน้าแรก)
         // ==========================================
         case 'get_dashboard_stats':
-            // ดึงข้อมูลยอดขายรวม (ดึงจำนวนจาก Sale * ราคาจาก Product)
+            // 1. ดึงยอดขายรวมทั้งหมด
             $stmtSales = $conn->query("SELECT SUM(s.Quantity * p.ProductPrice) as TotalSales FROM Sale s JOIN Product p ON s.ProductID = p.ProductID");
             $totalSales = $stmtSales->fetch(PDO::FETCH_ASSOC)['TotalSales'] ?? 0;
 
-            // ดึงจำนวนร้านค้าทั้งหมด
-            $stmtTenants = $conn->query("SELECT COUNT(*) as TotalTenants FROM Tenant");
-            $totalTenants = $stmtTenants->fetch(PDO::FETCH_ASSOC)['TotalTenants'] ?? 0;
+            // 1.1 ยอดขายเดือนนี้
+            $stmtThisMonth = $conn->query("SELECT SUM(s.Quantity * p.ProductPrice) as ThisMonth FROM Sale s JOIN Product p ON s.ProductID = p.ProductID WHERE MONTH(s.SalesDate) = MONTH(CURRENT_DATE()) AND YEAR(s.SalesDate) = YEAR(CURRENT_DATE())");
+            $thisMonth = $stmtThisMonth->fetch(PDO::FETCH_ASSOC)['ThisMonth'] ?? 0;
 
-            // ดึงจำนวนสินค้าทั้งหมดในระบบ
-            $stmtProducts = $conn->query("SELECT COUNT(*) as TotalProducts FROM Product");
-            $totalProducts = $stmtProducts->fetch(PDO::FETCH_ASSOC)['TotalProducts'] ?? 0;
+            // 1.2 ยอดขายเดือนที่แล้ว
+            $stmtLastMonth = $conn->query("SELECT SUM(s.Quantity * p.ProductPrice) as LastMonth FROM Sale s JOIN Product p ON s.ProductID = p.ProductID WHERE MONTH(s.SalesDate) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) AND YEAR(s.SalesDate) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)");
+            $lastMonth = $stmtLastMonth->fetch(PDO::FETCH_ASSOC)['LastMonth'] ?? 0;
+
+            // 1.3 คำนวณ % การเติบโตของยอดขาย
+            $salesTrend = 0;
+            if ($lastMonth > 0) {
+                $salesTrend = (($thisMonth - $lastMonth) / $lastMonth) * 100;
+            }
+
+            // 2. ดึงจำนวนร้านค้าและสินค้า
+            $totalTenants = $conn->query("SELECT COUNT(*) FROM Tenant")->fetchColumn();
+            $totalProducts = $conn->query("SELECT COUNT(*) FROM Product")->fetchColumn();
+
+            // 3. กล่องสรุปภาพรวม
+            // 3.1 สัญญาใกล้หมดอายุ (ภายใน 30 วัน)
+            $expiring = $conn->query("SELECT COUNT(*) FROM LeaseContract WHERE EndDateLease BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)")->fetchColumn();
+            
+            // 3.2 พื้นที่ว่าง (หา Space ที่ไม่มีในสัญญาช่วงวันที่ปัจจุบัน)
+            $freeSpace = $conn->query("SELECT COUNT(*) FROM RentalSpace WHERE SpaceID NOT IN (SELECT SpaceID FROM LeaseContract WHERE CURDATE() BETWEEN StartDateLease AND EndDateLease)")->fetchColumn();
+            
+            // 3.3 ใบแจ้งหนี้ค้างชำระ (Status = Unpaid หรือ Pending)
+            $unpaid = $conn->query("SELECT SUM(Amount) FROM Invoice WHERE Status IN ('Unpaid', 'Pending')")->fetchColumn();
 
             $response = [
                 "status" => "success",
                 "data" => [
-                    "total_sales" => number_format($totalSales, 2),
-                    "total_tenants" => $totalTenants,
-                    "total_products" => $totalProducts
+                    "total_sales" => (float)$totalSales,
+                    "sales_trend" => round($salesTrend, 1), // ปัดทศนิยม 1 ตำแหน่ง
+                    "total_tenants" => (int)$totalTenants,
+                    "total_products" => (int)$totalProducts,
+                    "expiring_contracts" => (int)$expiring,
+                    "free_spaces" => (int)$freeSpace,
+                    "unpaid_invoices" => (float)$unpaid
                 ]
             ];
             break;
@@ -47,7 +71,12 @@ try {
         // ระบบที่ 2: Employee Management (จัดการพนักงาน)
         // ==========================================
         case 'get_employees':
-            $stmt = $conn->query("SELECT * FROM Employee ORDER BY EmployeeID ASC");
+            // JOIN ตาราง UserAccount เพื่อดึง Role และ Username มาแสดงผลด้วย
+            $sql = "SELECT e.EmployeeID, e.EmployeeName, e.Position, e.EmTelephone, u.Role, u.Username 
+                    FROM Employee e
+                    LEFT JOIN UserAccount u ON e.AccountID = u.AccountID
+                    ORDER BY e.EmployeeID ASC";
+            $stmt = $conn->query($sql);
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
 
@@ -56,10 +85,24 @@ try {
             $empName = $_POST['employee_name'];
             $position = $_POST['position'];
             $tel = $_POST['telephone'];
-
-            $stmt = $conn->prepare("INSERT INTO Employee (EmployeeID, EmployeeName, Position, EmTelephone) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$empID, $empName, $position, $tel]);
             
+            $accID = $_POST['account_id'];
+            $username = $_POST['username'];
+            $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // หรือถ้าเพื่อนดึงพาสเวิร์ดตรงๆ ให้เอา password_hash ออก
+            $role = $_POST['role'];
+
+            // ใช้ Transaction ป้องกันการ Error กลางคัน
+            $conn->beginTransaction();
+            
+            // 1. ต้องสร้าง UserAccount ก่อนเสมอ
+            $stmt1 = $conn->prepare("INSERT INTO UserAccount (AccountID, Username, Password, Role) VALUES (?, ?, ?, ?)");
+            $stmt1->execute([$accID, $username, $password, $role]);
+
+            // 2. สร้าง Profile พนักงานแล้วผูก AccountID (สังเกตว่ามีการเพิ่ม AccountID ในคำสั่ง SQL)
+            $stmt2 = $conn->prepare("INSERT INTO Employee (EmployeeID, EmployeeName, Position, EmTelephone, AccountID) VALUES (?, ?, ?, ?, ?)");
+            $stmt2->execute([$empID, $empName, $position, $tel, $accID]);
+            
+            $conn->commit();
             $response = ["status" => "success", "message" => "เพิ่มพนักงาน $empName สำเร็จ"];
             break;
 
@@ -133,11 +176,17 @@ try {
             $response = ["status" => "success", "message" => "บันทึกสัญญา $contractID สำเร็จ"];
             break;
 
-        // ==========================================
+       // ==========================================
         // ระบบที่ 5: Invoice Management (ใบแจ้งหนี้)
         // ==========================================
         case 'get_invoices':
-            $stmt = $conn->query("SELECT * FROM Invoice ORDER BY InvoiceDate DESC");
+            // ดึงข้อมูลบิล และ JOIN ข้ามไปดึงชื่อร้านค้า (TenantName)
+            $sql = "SELECT i.InvoiceID, i.InvoiceDate, i.Amount, i.Status, t.TenantName 
+                    FROM Invoice i 
+                    JOIN LeaseContract lc ON i.ContractID = lc.ContractID 
+                    JOIN Tenant t ON lc.TenantID = t.TenantID 
+                    ORDER BY i.InvoiceDate DESC";
+            $stmt = $conn->query($sql);
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
 
