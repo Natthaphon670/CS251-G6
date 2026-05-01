@@ -43,44 +43,49 @@
                 <div class="card" style="max-width: 800px; margin: 0 auto;">
                     <h3 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">เครื่องมือสร้างรายงาน (สำหรับพนักงาน)</h3>
                     
-                    <form style="display: flex; flex-direction: column; gap: 20px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">ประเภทรายงาน:</label>
-                            <select style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
-                                <option value="sales_daily">รายงานยอดขายประจำวัน</option>
-                                <option value="sales_monthly">รายงานยอดขายประจำเดือน</option>
-                                <option value="space_usage">รายงานสถานะพื้นที่เช่า</option>
-                                <option value="inventory_stock">รายงานสินค้าคงคลัง</option>
-                            </select>
-                        </div>
-
+                    <form id="addReportForm" style="display: flex; flex-direction: column; gap: 20px;">
                         <div style="display: flex; gap: 20px;">
                             <div style="flex: 1;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 500;">ตั้งแต่วันที่:</label>
-                                <input type="date" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500;">รหัสรายงาน (Report ID):</label>
+                                <input type="text" name="report_id" placeholder="R0000X" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
                             </div>
                             <div style="flex: 1;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 500;">ถึงวันที่:</label>
-                                <input type="date" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500;">รหัสพนักงานผู้ออก (Employee ID):</label>
+                                <input type="text" name="employee_id" placeholder="E0000X" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
                             </div>
                         </div>
 
                         <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">รูปแบบไฟล์ออก (Export Format):</label>
-                            <select style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
-                                <option value="pdf">📄 PDF Document (.pdf)</option>
-                                <option value="excel">📊 Excel Spreadsheet (.xlsx)</option>
-                                <option value="csv">📑 CSV File (.csv)</option>
-                            </select>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">ชื่อ/ประเภทรายงาน:</label>
+                            <input type="text" name="report_name" placeholder="เช่น รายงานยอดขายประจำเดือน..." required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
                         </div>
 
-                        <button type="button" class="btn btn-primary" style="padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; margin-top: 10px;">
-                            สร้างและดาวน์โหลดรายงาน
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">วันที่ออกรายงาน:</label>
+                            <input type="date" name="report_date" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; margin-top: 10px;">
+                            สร้างและบันทึกประวัติรายงาน
                         </button>
                     </form>
                 </div>
-            </section>
-        </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>ประวัติการออกรายงานล่าสุด</h3>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px;">
+                        <thead>
+                            <tr style="background-color: #f4f4f4; border-bottom: 2px solid #ddd;">
+                                <th style="padding: 12px;">ชื่อรายงาน</th>
+                                <th style="padding: 12px;">วันที่ออกรายงาน</th>
+                                <th style="padding: 12px;">ผู้ออกรายงาน</th>
+                                <th style="padding: 12px;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            </tbody>
+                    </table>
+                </div>
     </main>
 
     <script src="../js/admin.js"></script>

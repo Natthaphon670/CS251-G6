@@ -85,7 +85,7 @@ async function loadSpaces() {
                 <td style="padding: 12px;">${space.Size}</td>
                 <td style="padding: 12px;"><span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">ว่าง</span></td>
                 <td style="padding: 12px;">
-                    <button style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button>
+                    <button onclick="prepareEditSpace('${space.SpaceID}')" style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button>
                 </td>
             </tr>
         `).join('');
@@ -119,8 +119,9 @@ async function loadTenants() {
                 <td style="padding: 12px;">${tenant.TenantCategory}</td>
                 <td style="padding: 12px;">${tenant.TenantContactInfo}</td>
                 <td style="padding: 12px;">-</td>
-                <td style="padding: 12px;"><button class="btn-edit" style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button></td>
-            </tr>
+                <td style="padding: 12px;">
+                <button onclick="prepareEditTenant('${tenant.TenantID}')" class="btn-edit" style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button>
+                </tr>
         `).join('');
     }
 }
@@ -208,6 +209,34 @@ async function loadWarehouse() {
                 <td style="padding: 12px;">${item.SupplierName || 'ทั่วไป'}</td>
             </tr>
         `).join('');
+    }
+}
+
+   // --- เตรียมข้อมูลแก้ไข Tenant ---
+async function prepareEditTenant(id) {
+    const res = await callAdminAPI('get_tenant_by_id', { tenant_id: id });
+    if (res.status === 'success') {
+        const t = res.data;
+        const form = document.getElementById('editTenantForm');
+        form.tenant_id.value = t.TenantID;
+        form.tenant_name.value = t.TenantName;
+        form.category.value = t.TenantCategory;
+        form.contact_info.value = t.TenantContactInfo;
+        openModal('editTenantModal');
+    }
+}
+
+// --- เตรียมข้อมูลแก้ไข Space ---
+async function prepareEditSpace(id) {
+    const res = await callAdminAPI('get_space_by_id', { space_id: id });
+    if (res.status === 'success') {
+        const s = res.data;
+        const form = document.getElementById('editSpaceForm');
+        form.space_id.value = s.SpaceID;
+        form.floor.value = s.Floor;
+        form.location.value = s.Location;
+        form.size.value = s.Size;
+        openModal('editSpaceModal');
     }
 }
 
@@ -360,6 +389,46 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await callAdminAPI('add_warehouse_stock', Object.fromEntries(new FormData(warehouseForm)));
             if (res.status === 'success') {
                 alert(res.message); closeModal('warehouseModal'); loadWarehouse();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มสร้างรายงาน ---
+    const reportForm = document.getElementById('addReportForm');
+    if (reportForm) {
+        reportForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_report', Object.fromEntries(new FormData(reportForm)));
+            if (res.status === 'success') {
+                alert("ระบบได้สร้างรายงานและดาวน์โหลดเรียบร้อยแล้ว!"); 
+                reportForm.reset(); 
+                loadReports(); // อัปเดตตารางประวัติด้านล่างทันที
+            } else { 
+                alert("Error: " + res.message); 
+            }
+        };
+    }
+
+    // --- ส่งข้อมูลแก้ไขร้านค้า ---
+    const editTenantForm = document.getElementById('editTenantForm');
+    if (editTenantForm) {
+        editTenantForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('update_tenant', Object.fromEntries(new FormData(editTenantForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('editTenantModal'); loadTenants();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ส่งข้อมูลแก้ไขพื้นที่ ---
+    const editSpaceForm = document.getElementById('editSpaceForm');
+    if (editSpaceForm) {
+        editSpaceForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('update_space', Object.fromEntries(new FormData(editSpaceForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('editSpaceModal'); loadSpaces();
             } else { alert("Error: " + res.message); }
         };
     }

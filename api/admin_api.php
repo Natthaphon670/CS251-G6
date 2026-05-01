@@ -328,6 +328,50 @@ try {
             $conn->commit();
             $response = ["status" => "success", "message" => "เพิ่มสินค้า $productName เข้าคลังสำเร็จ"];
             break;
+
+            // ==========================================
+        // ระบบ Update ข้อมูล Tenant และ Space
+        // ==========================================
+        
+        // 1. ดึงข้อมูล Tenant มาแสดงในฟอร์ม
+        case 'get_tenant_by_id':
+            $id = $_POST['tenant_id'];
+            $stmt = $conn->prepare("SELECT * FROM Tenant WHERE TenantID = ?");
+            $stmt->execute([$id]);
+            $response = ["status" => "success", "data" => $stmt->fetch(PDO::FETCH_ASSOC)];
+            break;
+
+        // 2. บันทึกข้อมูล Tenant ที่แก้ไขแล้ว
+        case 'update_tenant':
+            $id = $_POST['tenant_id'];
+            $name = $_POST['tenant_name'];
+            $category = $_POST['category'];
+            $contact = $_POST['contact_info'];
+
+            $stmt = $conn->prepare("UPDATE Tenant SET TenantName = ?, TenantCategory = ?, TenantContactInfo = ? WHERE TenantID = ?");
+            $stmt->execute([$name, $category, $contact, $id]);
+            $response = ["status" => "success", "message" => "อัปเดตข้อมูลร้านค้า $name เรียบร้อยแล้ว"];
+            break;
+
+        // 3. ดึงข้อมูล Space มาแสดงในฟอร์ม
+        case 'get_space_by_id':
+            $id = $_POST['space_id'];
+            $stmt = $conn->prepare("SELECT * FROM RentalSpace WHERE SpaceID = ?");
+            $stmt->execute([$id]);
+            $response = ["status" => "success", "data" => $stmt->fetch(PDO::FETCH_ASSOC)];
+            break;
+
+        // 4. บันทึกข้อมูล Space ที่แก้ไขแล้ว
+        case 'update_space':
+            $id = $_POST['space_id'];
+            $floor = $_POST['floor'];
+            $location = $_POST['location'];
+            $size = $_POST['size'];
+
+            $stmt = $conn->prepare("UPDATE RentalSpace SET Floor = ?, Location = ?, Size = ? WHERE SpaceID = ?");
+            $stmt->execute([$floor, $location, $size, $id]);
+            $response = ["status" => "success", "message" => "อัปเดตข้อมูลพื้นที่รหัส $id เรียบร้อยแล้ว"];
+            break;
     }
     
 } catch (PDOException $e) {
