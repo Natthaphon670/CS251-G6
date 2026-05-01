@@ -77,18 +77,26 @@ async function loadSpaces() {
     const res = await callAdminAPI('get_spaces');
     const tbody = document.getElementById('spaceTableBody');
     if (res.status === 'success' && tbody) {
-        tbody.innerHTML = res.data.map(space => `
+        tbody.innerHTML = res.data.map(space => {
+            // เช็กสถานะพื้นที่จากข้อมูลที่ SQL คำนวณมาให้
+            const statusText = space.IsOccupied > 0 ? 'ไม่ว่าง' : 'ว่าง';
+            const statusColor = space.IsOccupied > 0 ? '#dc3545' : '#28a745'; // แดง = ไม่ว่าง, เขียว = ว่าง
+
+            return `
             <tr style="border-bottom: 1px solid #ddd;">
                 <td style="padding: 12px;">${space.SpaceID}</td>
                 <td style="padding: 12px;">${space.Floor}</td>
                 <td style="padding: 12px;">${space.Location}</td>
                 <td style="padding: 12px;">${space.Size}</td>
-                <td style="padding: 12px;"><span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">ว่าง</span></td>
+                <td style="padding: 12px;">
+                    <span style="background: ${statusColor}; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">${statusText}</span>
+                </td>
                 <td style="padding: 12px;">
                     <button onclick="prepareEditSpace('${space.SpaceID}')" style="background: #ffc107; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">แก้ไข</button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 }
 
@@ -131,16 +139,36 @@ async function loadContracts() {
     const res = await callAdminAPI('get_contracts');
     const tbody = document.getElementById('leaseTableBody');
     if (res.status === 'success' && tbody) {
-        tbody.innerHTML = res.data.map(con => `
+        tbody.innerHTML = res.data.map(con => {
+            // ตรรกะคำนวณสถานะสัญญาเช่าจากวันที่
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // รีเซ็ตเวลาเพื่อเทียบเฉพาะวันที่
+            const startDate = new Date(con.StartDateLease);
+            const endDate = new Date(con.EndDateLease);
+            
+            let statusBadge = '';
+            if (today > endDate) {
+                // เลยวันสิ้นสุดไปแล้ว = หมดอายุ (สีเทา)
+                statusBadge = `<span style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">Expired</span>`;
+            } else if (today < startDate) {
+                // ยังไม่ถึงวันเริ่มสัญญา = รอเริ่มสัญญา (สีเหลือง)
+                statusBadge = `<span style="background: #ffc107; color: black; padding: 5px 10px; border-radius: 20px; font-size: 12px;">Pending</span>`;
+            } else {
+                // อยู่ในระหว่างสัญญา = ใช้งานอยู่ (สีเขียว)
+                statusBadge = `<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">Active</span>`;
+            }
+
+            return `
             <tr style="border-bottom: 1px solid #ddd;">
                 <td style="padding: 12px;">${con.ContractID}</td>
                 <td style="padding: 12px;">${con.TenantName}</td>
                 <td style="padding: 12px;">${con.StartDateLease}</td>
                 <td style="padding: 12px;">${con.EndDateLease}</td>
-                <td style="padding: 12px;"><span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">Active</span></td>
+                <td style="padding: 12px;">${statusBadge}</td>
                 <td style="padding: 12px;"><a href="#" style="color: #007bff;">📄 ดู PDF</a></td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 }
 

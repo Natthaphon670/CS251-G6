@@ -115,7 +115,13 @@ try {
             break;
 
         case 'get_spaces':
-            $stmt = $conn->query("SELECT * FROM RentalSpace ORDER BY SpaceID ASC");
+            // ดึงข้อมูลพื้นที่ และนับจำนวนสัญญาเช่าที่ "กำลัง Active อยู่ในวันนี้" (ถ้า > 0 แปลว่าไม่ว่าง)
+            $sql = "SELECT s.*, 
+                    (SELECT COUNT(*) FROM LeaseContract lc 
+                     WHERE lc.SpaceID = s.SpaceID 
+                     AND CURDATE() BETWEEN lc.StartDateLease AND lc.EndDateLease) as IsOccupied 
+                    FROM RentalSpace s ORDER BY s.SpaceID ASC";
+            $stmt = $conn->query($sql);
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
 
