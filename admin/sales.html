@@ -42,12 +42,14 @@
             <section class="content-section">
                 <div class="card" style="margin-bottom: 20px;">
                     <h3>ลงบันทึกการขายประจำวัน (Manual Entry)</h3>
-                    <form style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px;">
-                        <input type="date" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        <input type="text" placeholder="ชื่อร้านค้า / รหัส" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        <input type="number" placeholder="ยอดเงิน (บาท)" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        <button type="button" style="padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">บันทึกยอดขาย</button>
-                    </form>
+                    <form id="addSaleForm" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px;">
+    <input type="date" name="sales_date" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+    <input type="text" name="tenant_id" placeholder="รหัสร้านค้า (T0000X)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+    <input type="text" name="product_id" placeholder="รหัสสินค้า (P0000X)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+    <input type="number" name="quantity" placeholder="ยอดรวม฿" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+    <input type="text" name="sales_id" placeholder="รหัสรายการ (SL000X)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+    <button type="submit" style="grid-column: span 3; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">บันทึกยอดขาย</button>
+</form>
                 </div>
 
                 <div class="card">

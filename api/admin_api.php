@@ -277,6 +277,57 @@ try {
             $stmt = $conn->query($sql);
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
+
+            // เพิ่มเข้าไปใน switch ($action)
+        case 'add_space':
+            $spaceID = $_POST['space_id'];
+            $floor = $_POST['floor'];
+            $location = $_POST['location'];
+            $size = $_POST['size'];
+
+            $stmt = $conn->prepare("INSERT INTO RentalSpace (SpaceID, Floor, Location, Size) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$spaceID, $floor, $location, $size]);
+            $response = ["status" => "success", "message" => "เพิ่มพื้นที่ $spaceID สำเร็จ"];
+            break;
+
+            // ==========================================
+        // ระบบจัดการคลังสินค้า (เพิ่มข้อมูลทีเดียว 5 ตาราง)
+        // ==========================================
+        case 'add_warehouse_stock':
+            $productID = $_POST['product_id'];
+            $productName = $_POST['product_name'];
+            $price = $_POST['price'];
+            $warehouseID = $_POST['warehouse_id'];
+            $quantity = $_POST['quantity'];
+            $categoryID = $_POST['category_id'];
+            $supplierID = $_POST['supplier_id'];
+
+            // ใช้ Transaction เพราะต้อง Insert หลายตาราง ถ้าพังจะ Rollback ได้
+            $conn->beginTransaction();
+            
+            // 1. เพิ่มสินค้าใหม่ลงตาราง Product
+            $stmt1 = $conn->prepare("INSERT INTO Product (ProductID, ProductName, ProductPrice) VALUES (?, ?, ?)");
+            $stmt1->execute([$productID, $productName, $price]);
+
+            // 2. เพิ่มข้อมูลล็อตคลัง/จำนวนลงตาราง Warehouse
+            $stmt2 = $conn->prepare("INSERT INTO Warehouse (WarehouseID, WarehouseQuantity, LastUpdate) VALUES (?, ?, CURRENT_TIMESTAMP)");
+            $stmt2->execute([$warehouseID, $quantity]);
+
+            // 3. ผูกสินค้าเข้ากับล็อตคลัง (Store Junction)
+            $stmt3 = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID) VALUES (?, ?)");
+            $stmt3->execute([$productID, $warehouseID]);
+
+            // 4. ผูกหมวดหมู่สินค้า (Categorize Junction)
+            $stmt4 = $conn->prepare("INSERT INTO Categorize (ProductID, CategoryID) VALUES (?, ?)");
+            $stmt4->execute([$productID, $categoryID]);
+
+            // 5. ผูกผู้จัดจำหน่าย (Supply Junction)
+            $stmt5 = $conn->prepare("INSERT INTO Supply (ProductID, SupplierID) VALUES (?, ?)");
+            $stmt5->execute([$productID, $supplierID]);
+
+            $conn->commit();
+            $response = ["status" => "success", "message" => "เพิ่มสินค้า $productName เข้าคลังสำเร็จ"];
+            break;
     }
     
 } catch (PDOException $e) {

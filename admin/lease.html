@@ -64,6 +64,32 @@
         </div>
     </main>
 
+    <div id="leaseModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background:#fff; margin:5% auto; padding:20px; width:500px; border-radius:8px;">
+        <h3 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">ร่างสัญญาเช่าใหม่</h3>
+        <form id="addLeaseForm" style="display:grid; gap:10px;">
+            <input type="text" name="contract_id" placeholder="เลขที่สัญญา (LC000X)" required style="padding:8px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <label style="font-size: 12px;">วันที่เริ่มสัญญา:</label>
+                    <input type="date" name="start_date" required style="width:90%; padding:8px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px;">วันที่สิ้นสุดสัญญา:</label>
+                    <input type="date" name="end_date" required style="width:90%; padding:8px;">
+                </div>
+            </div>
+            <input type="text" name="tenant_id" placeholder="รหัสร้านค้า (T0000X)" required style="padding:8px;">
+            <input type="text" name="space_id" placeholder="รหัสพื้นที่ (S0000X)" required style="padding:8px;">
+            
+            <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:10px;">
+                <button type="button" onclick="closeModal('leaseModal')" style="padding:8px 15px; background:#ccc; border:none; border-radius:4px; cursor:pointer;">ยกเลิก</button>
+                <button type="submit" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">บันทึกสัญญา</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <script src="../js/admin.js"></script>
     <script src="admin_auth.js"></script>
 </body>

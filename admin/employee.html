@@ -53,7 +53,38 @@
             </div>
         </div>
     </main>
+
+    <div id="employeeModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; width:500px; border-radius:8px;">
+        <h3 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">เพิ่มข้อมูลพนักงานใหม่</h3>
+        <form id="addEmployeeForm" style="display:grid; gap:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="text" name="employee_id" placeholder="รหัสพนักงาน (E0000X)" required style="padding:8px;">
+                <input type="text" name="account_id" placeholder="รหัสบัญชี (A0000X)" required style="padding:8px;">
+            </div>
+            <input type="text" name="employee_name" placeholder="ชื่อ-นามสกุล" required style="padding:8px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="text" name="position" placeholder="ตำแหน่ง" required style="padding:8px;">
+                <input type="text" name="telephone" placeholder="เบอร์โทรศัพท์" required style="padding:8px;">
+            </div>
+            <hr>
+            <input type="text" name="username" placeholder="Username สำหรับ Login" required style="padding:8px;">
+            <input type="password" name="password" placeholder="Password" required style="padding:8px;">
+            <select name="role" required style="padding:8px;">
+                <option value="Employee">Employee (พนักงานทั่วไป)</option>
+                <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
+            </select>
+            <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:10px;">
+                <button type="button" onclick="closeModal('employeeModal')" style="padding:8px 15px; background:#ccc; border:none; border-radius:4px; cursor:pointer;">ยกเลิก</button>
+                <button type="submit" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">บันทึกข้อมูล</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <script src="../js/admin.js"></script>
     <script src="admin_auth.js"></script>
+
+    
 </body>
 </html>

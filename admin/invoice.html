@@ -64,6 +64,28 @@
         </div>
     </main>
 
+    <div id="invoiceModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; width:450px; border-radius:8px;">
+        <h3 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">สร้างใบแจ้งหนี้ใหม่</h3>
+        <form id="addInvoiceForm" style="display:grid; gap:10px;">
+            <input type="text" name="invoice_id" placeholder="เลขที่ใบแจ้งหนี้ (INV0000X)" required style="padding:8px;">
+            <input type="date" name="invoice_date" required style="padding:8px;">
+            <input type="number" name="amount" placeholder="จำนวนเงิน (บาท)" required style="padding:8px;">
+            <input type="text" name="contract_id" placeholder="อ้างอิงเลขที่สัญญา (LC000X)" required style="padding:8px;">
+            <select name="status" style="padding:8px;">
+                <option value="Unpaid">รอชำระเงิน (Unpaid)</option>
+                <option value="Paid">ชำระแล้ว (Paid)</option>
+                <option value="Pending">รอดำเนินการ (Pending)</option>
+            </select>
+            
+            <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:10px;">
+                <button type="button" onclick="closeModal('invoiceModal')" style="padding:8px 15px; background:#ccc; border:none; border-radius:4px; cursor:pointer;">ยกเลิก</button>
+                <button type="submit" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">ออกใบแจ้งหนี้</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <script src="../js/admin.js"></script>
     <script src="admin_auth.js"></script>
 </body>

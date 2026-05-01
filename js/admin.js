@@ -240,3 +240,127 @@ window.onclick = function(event) {
         }
     }
 }
+
+
+// --- ฟังก์ชันเปิด/ปิด Modal ---
+function openModal(id) {
+    document.getElementById(id).style.display = 'block';
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+    if(id === 'employeeModal') document.getElementById('addEmployeeForm').reset();
+}
+
+// --- ผูกปุ่มเข้ากับหน้าต่าง Modal (ใส่ใน DOMContentLoaded) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. ดึงข้อมูลตารางตามหน้าเว็บที่เปิดอยู่
+    if (document.getElementById('total_sales')) loadDashboardStats();
+    if (document.getElementById('employeeTableBody')) loadEmployees();
+    if (document.getElementById('tenantTableBody')) loadTenants();
+    if (document.getElementById('spaceTableBody')) loadSpaces();
+    if (document.getElementById('leaseTableBody')) loadContracts();
+    if (document.getElementById('invoiceTableBody')) loadInvoices();
+    if (document.getElementById('salesTableBody')) loadSales();
+    if (document.getElementById('reportTableBody')) loadReports();
+    if (document.getElementById('warehouseTableBody')) loadWarehouse();
+
+    // 2. จัดการปุ่ม "+ Add" ของทุกหน้า (ประกาศ addBtn แค่ครั้งเดียว)
+    const addBtn = document.querySelector('.btn-primary');
+    if (addBtn) {
+        addBtn.onclick = () => {
+            if (document.getElementById('employeeTableBody')) openModal('employeeModal');
+            else if (document.getElementById('tenantTableBody')) openModal('tenantModal');
+            else if (document.getElementById('spaceTableBody')) openModal('spaceModal');
+            else if (document.getElementById('leaseTableBody')) openModal('leaseModal');
+            else if (document.getElementById('invoiceTableBody')) openModal('invoiceModal');
+            else if (document.getElementById('warehouseTableBody')) openModal('warehouseModal');
+        };
+    }
+
+    // 3. จัดการการส่งฟอร์ม (Submit) แยกของใครของมัน
+
+    // --- ฟอร์มพนักงาน ---
+    const addEmpForm = document.getElementById('addEmployeeForm');
+    if (addEmpForm) {
+        addEmpForm.onsubmit = async (e) => {
+            e.preventDefault(); 
+            const res = await callAdminAPI('add_employee', Object.fromEntries(new FormData(addEmpForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('employeeModal'); loadEmployees();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มร้านค้า ---
+    const tenantForm = document.getElementById('addTenantForm');
+    if (tenantForm) {
+        tenantForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_tenant', Object.fromEntries(new FormData(tenantForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('tenantModal'); loadTenants();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มพื้นที่ ---
+    const spaceForm = document.getElementById('addSpaceForm');
+    if (spaceForm) {
+        spaceForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_space', Object.fromEntries(new FormData(spaceForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('spaceModal'); loadSpaces();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มสัญญาเช่า ---
+    const leaseForm = document.getElementById('addLeaseForm');
+    if (leaseForm) {
+        leaseForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_contract', Object.fromEntries(new FormData(leaseForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('leaseModal'); loadContracts();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มใบแจ้งหนี้ ---
+    const invoiceForm = document.getElementById('addInvoiceForm');
+    if (invoiceForm) {
+        invoiceForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_invoice', Object.fromEntries(new FormData(invoiceForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('invoiceModal'); loadInvoices();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มบันทึกการขาย (ไม่มี Modal) ---
+    const saleForm = document.getElementById('addSaleForm');
+    if (saleForm) {
+        saleForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_sale', Object.fromEntries(new FormData(saleForm)));
+            if (res.status === 'success') {
+                alert(res.message); saleForm.reset(); loadSales();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+
+    // --- ฟอร์มเพิ่มสต็อกสินค้า (Warehouse) ---
+    const warehouseForm = document.getElementById('addWarehouseForm');
+    if (warehouseForm) {
+        warehouseForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await callAdminAPI('add_warehouse_stock', Object.fromEntries(new FormData(warehouseForm)));
+            if (res.status === 'success') {
+                alert(res.message); closeModal('warehouseModal'); loadWarehouse();
+            } else { alert("Error: " + res.message); }
+        };
+    }
+});
