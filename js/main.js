@@ -40,14 +40,10 @@ function createRipple(btn, e) {
   r.addEventListener('animationend', () => r.remove());
 }
 
-/* ── SIGN IN LOGIC ── */
+/* ── SIGN IN LOGIC (เชื่อมต่อ API จริง) ── */
 const signInBtn = document.getElementById('signInBtn');
 const errorMsg  = document.getElementById('errorMsg');
 const errorText = document.getElementById('errorText');
-
-// Demo credentials — replace with real API auth
-const DEMO_USER = 'admin';
-const DEMO_PASS = '1234';
 
 signInBtn.addEventListener('click', async (e) => {
   createRipple(signInBtn, e);
@@ -56,37 +52,72 @@ signInBtn.addEventListener('click', async (e) => {
   const user = document.getElementById('username').value.trim();
   const pass = document.getElementById('password').value;
 
-  // Validation
   if (!user || !pass) {
     errorText.textContent = 'Please enter your username and password.';
     errorMsg.classList.add('show');
     return;
   }
 
-  // Show loading state
   signInBtn.classList.add('loading');
   signInBtn.disabled = true;
+  
+  try {
+    const response = await fetch('api/auth.php?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
 
-  // Simulate network delay (replace with actual fetch/axios call)
-  await new Promise(resolve => setTimeout(resolve, 1200));
+    const text = await response.text(); 
+    console.log("PHP Response:", text); 
 
-  signInBtn.classList.remove('loading');
-  signInBtn.disabled = false;
+    const result = JSON.parse(text);
 
-  if (user === DEMO_USER && pass === DEMO_PASS) {
-    // ✅ Login success — บันทึก session และ redirect ไปหน้า Tenant
-    sessionStorage.setItem('isLoggedIn', 'true');
-    sessionStorage.setItem('username', user);
+    signInBtn.classList.remove('loading');
+    signInBtn.disabled = false;
 
-    signInBtn.style.background = '#16a34a';
-    signInBtn.querySelector('.btn-text').textContent = '✓  Success!';
+    // ตรวจสอบ status ว่าเป็น 200 (Success) หรือไม่
+    if (result.status === 200) {
+      // จุดสำคัญ: อิงตาม PHP ล่าสุด ข้อมูลอยู่ที่ result.data โดยตรง
+      const userData = result.data; 
+      
+      // บันทึกข้อมูลลง SessionStorage เพื่อใช้ในหน้า Dashboard
+      sessionStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem('account_id', userData.account_id);
+      sessionStorage.setItem('username', userData.username);
+      sessionStorage.setItem('role', userData.role);
 
-    setTimeout(() => {
-      window.location.href = 'tenant/index.html';
-    }, 600);
-  } else {
-    // ❌ Login failed
-    errorText.textContent = 'Username or password is incorrect.';
+      // ถ้าเป็น Tenant ให้เก็บรหัสร้านค้าเพื่อใช้ดึงข้อมูลยอดขาย
+      if (userData.role && userData.role.toLowerCase() === 'tenant') {
+          sessionStorage.setItem('TenantID', userData.tenant_id);
+          sessionStorage.setItem('tenant_id', userData.tenant_id);
+          sessionStorage.setItem('TenantName', userData.tenant_name);
+      }
+
+      // แสดงสถานะสำเร็จก่อนเปลี่ยนหน้า
+      signInBtn.style.background = '#16a34a';
+      signInBtn.querySelector('.btn-text').textContent = '✓ Success!';
+
+      // เปลี่ยนหน้าตามสิทธิ์ของผู้ใช้งาน
+      setTimeout(() => {
+        if (userData.role && userData.role.toLowerCase() === 'tenant') {
+            window.location.href = 'tenant/index.html'; 
+        } else {
+            window.location.href = 'admin/dashboard.html'; 
+        }
+      }, 600);
+
+    } else {
+      // กรณีรหัสผิด หรือ PHP ส่ง Error อื่นๆ มา
+      errorText.textContent = result.message || 'Username or password is incorrect.';
+      errorMsg.classList.add('show');
+      shakeCard();
+    }
+  } catch (error) {
+    signInBtn.classList.remove('loading');
+    signInBtn.disabled = false;
+    console.error("Login Error:", error);
+    errorText.textContent = 'พบปัญหาในการเชื่อมต่อ: ' + error.message;
     errorMsg.classList.add('show');
     shakeCard();
   }
@@ -120,21 +151,11 @@ guestBtn.addEventListener('click', () => {
     guestBtn.disabled = false;
     guestBtn.innerHTML = `
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M12 14c-5 0-8 2.5-8 4v1h16v-1c0-1.5-3-4-8-4z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14c-5 0-8 2.5-8 4v1h16v-1c0-1.5-3-4-8-4z"/>
       </svg>
       Continue as Guest
     `;
-    // Replace with actual guest redirect, e.g.: window.location.href = '/guest-dashboard';
-    alert('Continuing as Guest! (demo)');
+    window.location.href = 'index.html'; // เปลี่ยนไปหน้า Public 
   }, 900);
 });
-
-// ตัวอย่างในไฟล์ js/main.js
-if (loginSuccess) {
-    sessionStorage.setItem('role', response.role); // 'Admin' หรือ 'Employee'
-    sessionStorage.setItem('username', response.username);
-    window.location.href = 'admin/dashboard.html';
-}
