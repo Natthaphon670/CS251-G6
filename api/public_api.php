@@ -55,6 +55,7 @@ function getProducts() {
             $p['TotalStock'] = (int)$p['TotalStock'];
             $p['InStock'] = $p['TotalStock'] > 0;
         }
+        unset($p);
         
         echo json_encode(['success' => true, 'data' => $products]);
     } catch (PDOException $e) {
@@ -68,17 +69,22 @@ function getProducts() {
 function getTenants() {
     global $conn;
     try {
-        // ดึงชื่อร้าน หมวดหมู่ และเชื่อมกับสัญญาเช่าเพื่อดูโซนและชั้น
         $sql = "
             SELECT 
                 t.TenantID, 
                 t.TenantName, 
-                t.TenantCategory, 
+                t.TenantCategory,
+                t.TenantContactInfo,
                 rs.Floor, 
                 rs.Location 
             FROM Tenant t 
-            LEFT JOIN LeaseContract lc ON t.TenantID = lc.TenantID 
+            LEFT JOIN LeaseContract lc 
+                ON t.TenantID = lc.TenantID 
+                AND lc.EndDateLease >= CURDATE()
             LEFT JOIN RentalSpace rs ON lc.SpaceID = rs.SpaceID
+            GROUP BY t.TenantID, t.TenantName, t.TenantCategory,
+                     t.TenantContactInfo, rs.Floor, rs.Location
+            ORDER BY rs.Floor, t.TenantName
         ";
         $stmt = $conn->query($sql);
         $tenants = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -88,7 +94,6 @@ function getTenants() {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
-
 // ========================================================
 // 3. ฟังก์ชันดึงรายละเอียดสินค้า 1 ชิ้น (หน้า Product Detail)
 // ========================================================
@@ -143,6 +148,7 @@ function getProductDetail() {
         foreach ($promotions as &$promo) {
             $promo['PriceAfterDiscount'] = round($product['ProductPrice'] * (1 - $promo['Discount'] / 100), 2);
         }
+        unset($p);
         $product['ActivePromotions'] = $promotions;
 
         echo json_encode(['success' => true, 'data' => $product]);
@@ -167,7 +173,8 @@ function getPromotions() {
                 t.TenantName 
             FROM Promotion pr 
             JOIN Tenant t ON pr.TenantID = t.TenantID 
-            WHERE pr.EndDatePromotion >= CURDATE()
+            WHERE pr.StartDatePromotion <= CURDATE() 
+            AND pr.EndDatePromotion >= CURDATE()
             ORDER BY pr.Discount DESC
         ";
         $stmt = $conn->query($sql);
