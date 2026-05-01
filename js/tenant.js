@@ -1,327 +1,424 @@
 
-/* ─────────────────────────────────────────────
-   tenant.js
-   เชื่อมหน้า HTML ฝั่ง Tenant กับ API
-───────────────────────────────────────────── */
-
-const API_BASE = '../api/';
-
-function $(selector, root = document) {
-  return root.querySelector(selector);
+// ── 1. ฟังก์ชันช่วยเหลือ ──
+// ดึงรหัสร้านค้า (รองรับทั้งตัวพิมพ์เล็กและใหญ่ เผื่อระบบ Login เซฟมาไม่ตรงกัน)
+function getTenantId() {
+    return sessionStorage.getItem('TenantID') || sessionStorage.getItem('tenant_id');
 }
 
-function $all(selector, root = document) {
-  return Array.from(root.querySelectorAll(selector));
-}
-
-function escapeHTML(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function formatMoney(value) {
-  const number = Number(value || 0);
-  return `฿${number.toLocaleString('th-TH')}`;
-}
-
-async function apiFetch(file, options = {}) {
-  const response = await fetch(`${API_BASE}${file}`, {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    },
-    ...options
-  });
-
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-
-  if (!response.ok || data.status === 'error') {
-    throw new Error(data.message || `HTTP ${response.status}`);
-  }
-
-  return data;
-}
-
-function showError(message) {
-  console.error(message);
-  alert(`เกิดข้อผิดพลาด: ${message}`);
-}
-
-/* LOGOUT */
-async function logout() {
-  try {
-    await fetch(`${API_BASE}auth.php?action=logout`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-  } catch (error) {
-    console.warn(error);
-  }
-
-  sessionStorage.clear();
-  window.location.href = '../login.html';
-}
-
-function getPageName() {
-  return window.location.pathname.split('/').pop() || 'index.html';
-}
-
-/* DASHBOARD */
-async function loadDashboard() {
-  const data = await apiFetch('tenantDashboard.php');
-
-  const cards = $all('.stat-card p');
-  if (cards[0]) cards[0].textContent = formatMoney(data.total_sales);
-  if (cards[1]) cards[1].textContent = `${Number(data.low_stock_count || 0)} รายการ`;
-  if (cards[2]) cards[2].textContent = Number(data.active_promo || 0);
-
-  const tbody = $('.content-box tbody');
-  if (!tbody) return;
-
-  const rows = data.recent_sales || [];
-  tbody.innerHTML = rows.length
-    ? rows.map(sale => `
-      <tr>
-        <td>${escapeHTML(sale.SalesDate)}</td>
-        <td>${escapeHTML(sale.ProductID)}</td>
-        <td>${escapeHTML(sale.Quantity)}</td>
-        <td>${formatMoney(sale.TotalPrice)}</td>
-      </tr>
-    `).join('')
-    : '<tr><td colspan="4">ยังไม่มีรายการขาย</td></tr>';
-}
-
-/* SALES TRACKING */
-async function loadSalesTracking() {
-  const data = await apiFetch('tenantDashboard.php');
-
-  const tbody = $('.sst-table tbody');
-  if (!tbody) return;
-
-  const rows = data.recent_sales || [];
-  tbody.innerHTML = rows.length
-    ? rows.map((sale, index) => `
-      <tr>
-        <td>${escapeHTML(sale.SalesID || index + 1)}</td>
-        <td>${escapeHTML(sale.SalesDate)}</td>
-        <td>${escapeHTML(sale.ProductID)}</td>
-        <td>${escapeHTML(sale.ProductName)}</td>
-        <td>${escapeHTML(sale.Quantity)}</td>
-        <td>${formatMoney(sale.TotalPrice)}</td>
-      </tr>
-    `).join('')
-    : '<tr><td colspan="6">ยังไม่มีประวัติการขาย</td></tr>';
-}
-
-/* WAREHOUSE */
-async function loadWarehouse() {
-  const data = await apiFetch('warehouse.php');
-
-  const tbody = $('.content-box tbody');
-  if (!tbody) return;
-
-  const rows = data.data || [];
-  tbody.innerHTML = rows.length
-    ? rows.map(item => `
-      <tr>
-        <td>${escapeHTML(item.ProductID)}</td>
-        <td>${escapeHTML(item.ProductName)}</td>
-        <td>${escapeHTML(item.WarehouseQuantity)}</td>
-        <td>
-          <input type="number" min="1" data-warehouse-id="${escapeHTML(item.WarehouseID)}">
-          <button class="btn btn-primary btn-add-stock" data-warehouse-id="${escapeHTML(item.WarehouseID)}">
-            เพิ่ม
-          </button>
-        </td>
-      </tr>
-    `).join('')
-    : '<tr><td colspan="4">ไม่พบข้อมูลคลังสินค้า</td></tr>';
-
-  $all('.btn-add-stock').forEach(button => {
-    button.addEventListener('click', async () => {
-      const warehouseId = button.dataset.warehouseId;
-      const input = $(`input[data-warehouse-id="${warehouseId}"]`);
-      const addAmount = Number(input?.value || 0);
-
-      if (addAmount <= 0) {
-        alert('กรุณากรอกจำนวนสินค้าที่ต้องการเพิ่ม');
-        return;
-      }
-
-      await apiFetch('warehouse.php', {
-        method: 'POST',
-        body: JSON.stringify({
-          warehouse_id: warehouseId,
-          add_amount: addAmount
-        })
-      });
-
-      alert('เพิ่มสินค้าเรียบร้อย');
-      loadWarehouse();
-    });
-  });
-}
-
-/* PROMOTION */
-async function loadPromotion() {
-  const data = await apiFetch('promotion.php');
-
-  const formCard = $('.form-card');
-  if (!formCard) return;
-
-  let listCard = $('.promotion-list-card');
-
-  if (!listCard) {
-    listCard = document.createElement('div');
-    listCard.className = 'form-card promotion-list-card';
-    listCard.innerHTML = `
-      <div class="form-card-title">
-        <i class="fas fa-list"></i> รายการโปรโมชัน
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>ชื่อโปรโมชัน</th>
-            <th>วันที่เริ่ม</th>
-            <th>วันที่สิ้นสุด</th>
-            <th>ส่วนลด</th>
-            <th>สถานะ</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    `;
-    formCard.after(listCard);
-  }
-
-  const tbody = $('tbody', listCard);
-  const rows = data.data || [];
-
-  tbody.innerHTML = rows.length
-    ? rows.map(promo => `
-      <tr>
-        <td>${escapeHTML(promo.PromotionName)}</td>
-        <td>${escapeHTML(promo.StartDatePromotion)}</td>
-        <td>${escapeHTML(promo.EndDatePromotion)}</td>
-        <td>${escapeHTML(promo.Discount)}%</td>
-        <td>${escapeHTML(promo.Status)}</td>
-      </tr>
-    `).join('')
-    : '<tr><td colspan="5">ยังไม่มีโปรโมชัน</td></tr>';
-}
-
-function bindPromotionForm() {
-  const formCard = $('.form-card');
-  const button = $('.btn-submit', formCard || document);
-  if (!formCard || !button) return;
-
-  button.addEventListener('click', async () => {
-    const inputs = $all('input', formCard);
-
-    const payload = {
-      p_name: inputs[0]?.value.trim(),
-      s_date: inputs[1]?.value,
-      e_date: inputs[2]?.value,
-      discount: inputs[3]?.value
-    };
-
-    await apiFetch('promotion.php', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-
-    alert('สร้างโปรโมชันสำเร็จ');
-    inputs.forEach(input => input.value = '');
-    loadPromotion();
-  });
-}
-
-/* SALES CONTRACT */
-async function loadSalesContract() {
-  const data = await apiFetch('sales_contract.php');
-
-  const contract = data.contract;
-  const values = $all('.contract-info-grid .info-value');
-
-  if (contract) {
-    if (values[0]) values[0].textContent = contract.ContractID || '-';
-    if (values[1]) values[1].textContent = `${contract.Location || '-'} ชั้น ${contract.Floor || '-'}`;
-  }
-
-  const tbody = $('.invoice-table tbody');
-  if (!tbody) return;
-
-  const rows = data.invoices || [];
-  tbody.innerHTML = rows.length
-    ? rows.map(inv => `
-      <tr>
-        <td>${escapeHTML(inv.InvoiceID)}</td>
-        <td>${escapeHTML(inv.InvoiceDate)}</td>
-        <td>${formatMoney(inv.Amount)}</td>
-        <td>${escapeHTML(inv.Status)}</td>
-      </tr>
-    `).join('')
-    : '<tr><td colspan="4">ยังไม่มีใบแจ้งหนี้</td></tr>';
-}
-
-/* MANAGE PRODUCT */
-function bindManageProductForm() {
-  const card = $('.mp-card');
-  const button = $('.btn-submit', card || document);
-
-  if (!card || !button) return;
-
-  button.addEventListener('click', async () => {
-    const inputs = $all('input', card);
-    const select = $('select', card);
-
-    const payload = {
-      pid: `P${Date.now().toString().slice(-5)}`,
-      pname: inputs[1]?.value.trim(),
-      sid: select?.value || '',
-      price: Number(inputs[2]?.value || 0)
-    };
-
-    await apiFetch('manage_product.php', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-
-    alert('บันทึกข้อมูลสินค้าสำเร็จ');
-    inputs.forEach(input => input.value = '');
-    if (select) select.value = '';
-  });
-}
-
-/* INIT */
+// ── 2. ตรวจสอบสิทธิ์ (Authentication & Setup) ──
 document.addEventListener('DOMContentLoaded', () => {
-  $all('.btn-logout').forEach(btn => {
-    btn.addEventListener('click', logout);
-  });
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('account_id');
+    const role = sessionStorage.getItem('role') || sessionStorage.getItem('Role');
+    const tenantId = getTenantId();
 
-  const page = getPageName();
+    // แสดงชื่อร้านค้าบน Header
+    const storeNameHeader = document.querySelector('header h2');
+    if (storeNameHeader && storeNameHeader.textContent.includes('ยินดีต้อนรับ')) {
+        const tenantName = sessionStorage.getItem('TenantName') || sessionStorage.getItem('tenant_name') || 'ร้านค้าของคุณ';
+        storeNameHeader.innerHTML = `ยินดีต้อนรับ <strong>${tenantName}</strong>`;
+    }
 
-  const loaders = {
-    'index.html': loadDashboard,
-    'store_sales_tracking.html': loadSalesTracking,
-    'warehouse.html': loadWarehouse,
-    'promotion.html': async () => {
-      bindPromotionForm();
-      await loadPromotion();
-    },
-    'sales_contract.html': loadSalesContract,
-    'manage_product.html': bindManageProductForm
-  };
+    // ระบบออกจากระบบ (Logout)
+    const logoutBtns = document.querySelectorAll('.btn-logout');
+    logoutBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = '../login.html';
+        });
+    });
 
-  const loader = loaders[page];
-
-  if (loader) {
-    loader().catch(error => showError(error.message));
-  }
+    // ── Router: ตรวจสอบหน้าปัจจุบันแล้วรันฟังก์ชันให้ตรงหน้า ──
+    const path = window.location.pathname.toLowerCase();
+    
+    // ใช้ includes ตรวจสอบชื่อไฟล์ให้ครอบคลุม
+    if (path.includes('index')) {
+        loadDashboard();
+    } else if (path.includes('manage_product')) {
+        loadSuppliersDropdown();
+        loadProducts();
+        setupProductForm();
+    } else if (path.includes('supplier')) {
+        loadSuppliers();
+        setupSupplierForm();
+    } else if (path.includes('warehouse')) {
+        loadWarehouse();
+    } else if (path.includes('promotion')) {
+        setupPromotionForm();
+    } else if (path.includes('store_sales_tracking')) {
+        setupSalesTracking();
+    } else if (path.includes('sales_contract')) {
+        loadContractAndInvoices();
+    }
 });
+
+// ── 3. ฟังก์ชันหลักสำหรับเรียก API (API Wrapper) ──
+async function callTenantAPI(action, data = {}) {
+    try {
+        // แนบ TenantID เข้าไปในทุกคำขอโดยอัตโนมัติ
+        data.tenant_id = getTenantId();
+
+        const response = await fetch('../api/tenant_api.php?action=' + action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        // ปริ้นผลลัพธ์ใน Console เพื่อให้หาบั๊กได้ง่ายขึ้น
+        console.log(`[API Response - ${action}]:`, result); 
+        return result;
+    } catch (error) {
+        console.error(`API Error (${action}):`, error);
+        return { status: 'error', message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ หรือ API ส่งค่ากลับมาไม่ใช่ JSON' };
+    }
+}
+
+/* ========================================================
+   หน้า 1: แผงควบคุม (Dashboard - index.html)
+======================================================== */
+async function loadDashboard() {
+    console.log("กำลังโหลดข้อมูล Dashboard...");
+    const result = await callTenantAPI('get_dashboard');
+    
+    if (result.status === 'success') {
+        const data = result.data;
+        
+        // อัปเดตสถิติด้านบน (ใช้ ID ที่ตั้งไว้ใน HTML อย่างแม่นยำ)
+        const salesEl = document.getElementById('dash-sales');
+        const lowStockEl = document.getElementById('dash-low-stock');
+        const promoEl = document.getElementById('dash-active-promo');
+
+        if (salesEl) salesEl.textContent = `฿${parseFloat(data.today_sales || 0).toLocaleString()}`;
+        if (lowStockEl) lowStockEl.textContent = `${data.low_stock_count || 0} รายการ`;
+        if (promoEl) promoEl.textContent = data.active_promotions || 0;
+
+        // อัปเดตตารางรายการขายล่าสุด
+        const tbody = document.querySelector('.content-box table tbody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            if (data.recent_sales && data.recent_sales.length > 0) {
+                data.recent_sales.forEach(sale => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${sale.SaleTime}</td>
+                            <td>${sale.ProductID}</td>
+                            <td>${sale.Quantity}</td>
+                            <td>฿${parseFloat(sale.TotalAmount).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #666;">ยังไม่มีรายการขายวันนี้</td></tr>';
+            }
+        }
+    } else {
+        console.error('เกิดข้อผิดพลาดในการโหลด Dashboard:', result.message);
+    }
+}
+
+/* ========================================================
+   หน้า 2: จัดการสินค้า (manage_product.html)
+======================================================== */
+async function loadProducts() {
+    const tbody = document.querySelector('.mp-table-wrap table tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+    const result = await callTenantAPI('get_products');
+    
+    if (result.status === 'success' && result.data.length > 0) {
+        tbody.innerHTML = '';
+        result.data.forEach(p => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="mp-code">${p.ProductID}</span></td>
+                    <td>${p.ProductName}</td>
+                    <td><span class="mp-badge-cat">${p.CategoryName}</span></td>
+                    <td class="mp-price">฿${parseFloat(p.ProductPrice).toLocaleString()}</td>
+                    <td><span class="mp-code">${p.SupplierID}</span></td>
+                </tr>
+            `;
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ไม่พบข้อมูลสินค้า</td></tr>';
+    }
+}
+
+async function loadSuppliersDropdown() {
+    const select = document.querySelector('.mp-select');
+    if (!select) return;
+
+    const result = await callTenantAPI('get_suppliers');
+    if (result.status === 'success') {
+        select.innerHTML = '<option value="">— เลือกผู้จำหน่าย —</option>';
+        result.data.forEach(s => {
+            select.innerHTML += `<option value="${s.SupplierID}">${s.SupplierID} – ${s.SupplierName}</option>`;
+        });
+    }
+}
+
+function setupProductForm() {
+    const submitBtn = document.querySelector('.mp-card .btn-submit');
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', async () => {
+        const inputs = document.querySelectorAll('.mp-card input, .mp-card select, .mp-card textarea');
+        const data = {
+            category_name: inputs[0].value.trim(),
+            product_name: inputs[1].value.trim(),
+            product_price: inputs[2].value,
+            supplier_id: inputs[3].value,
+            description: inputs[4].value.trim()
+        };
+
+        if (!data.product_name || !data.product_price || !data.category_name) {
+            alert('กรุณากรอกข้อมูลสำคัญให้ครบถ้วน (ชื่อหมวดหมู่, ชื่อสินค้า, ราคา)');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+        const result = await callTenantAPI('add_product', data);
+        if (result.status === 'success') {
+            alert('เพิ่มสินค้าสำเร็จ! รหัส: ' + result.product_id);
+            inputs.forEach(input => input.value = '');
+            loadProducts(); 
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + result.message);
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> บันทึกข้อมูลและสร้าง ProductID';
+    });
+}
+
+/* ========================================================
+   หน้า 3: จัดการ Supplier (supplier.html)
+======================================================== */
+async function loadSuppliers() {
+    const tbody = document.querySelector('.mp-table-card .mp-table tbody') || document.querySelector('.mp-supplier-card .mp-table tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+    const result = await callTenantAPI('get_suppliers');
+    
+    if (result.status === 'success' && result.data.length > 0) {
+        tbody.innerHTML = '';
+        result.data.forEach(s => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="mp-code">${s.SupplierID}</span></td>
+                    <td>${s.SupplierName}</td>
+                    <td>${s.ContactInfo}</td>
+                </tr>
+            `;
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">ยังไม่มีผู้จัดจำหน่าย</td></tr>';
+    }
+}
+
+function setupSupplierForm() {
+    const submitBtn = document.querySelector('.mp-supplier-card .btn-submit');
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', async () => {
+        const inputs = document.querySelectorAll('.mp-supplier-card input');
+        const data = {
+            supplier_name: inputs[0].value.trim(),
+            contact_info: inputs[1].value.trim()
+        };
+
+        if (!data.supplier_name) {
+            alert('กรุณากรอกชื่อผู้จัดจำหน่าย');
+            return;
+        }
+
+        const result = await callTenantAPI('add_supplier', data);
+        if (result.status === 'success') {
+            alert('เพิ่ม Supplier สำเร็จ! รหัส: ' + result.supplier_id);
+            inputs[0].value = '';
+            inputs[1].value = '';
+            loadSuppliers();
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + result.message);
+        }
+    });
+}
+
+/* ========================================================
+   หน้า 4: คลังสินค้า (warehouse.html)
+======================================================== */
+async function loadWarehouse() {
+    const tbody = document.querySelector('.content-box table tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">กำลังโหลดสต็อก...</td></tr>';
+    const result = await callTenantAPI('get_warehouse');
+
+    if (result.status === 'success' && result.data.length > 0) {
+        tbody.innerHTML = '';
+        result.data.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="mp-code">${item.ProductID}</span></td>
+                    <td>${item.ProductName}</td>
+                    <td><strong style="color: ${item.Quantity < 10 ? 'red' : 'inherit'}">${item.Quantity}</strong></td>
+                    <td>
+                        <input type="number" id="qty_${item.ProductID}" style="width: 80px;" min="1" placeholder="จำนวน"> 
+                        <button class="btn btn-primary" onclick="restockProduct('${item.ProductID}')">เพิ่ม</button>
+                    </td>
+                </tr>
+            `;
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ไม่พบข้อมูลสินค้าในคลัง</td></tr>';
+    }
+}
+
+window.restockProduct = async function(productId) {
+    const qtyInput = document.getElementById(`qty_${productId}`);
+    const qty = parseInt(qtyInput.value);
+
+    if (!qty || qty <= 0) {
+        alert('กรุณาระบุจำนวนที่ต้องการเพิ่มให้ถูกต้อง');
+        return;
+    }
+
+    const result = await callTenantAPI('restock_product', { product_id: productId, add_qty: qty });
+    if (result.status === 'success') {
+        alert('เติมสต็อกสำเร็จ!');
+        loadWarehouse(); 
+    } else {
+        alert('ผิดพลาด: ' + result.message);
+    }
+};
+
+/* ========================================================
+   หน้า 5: โปรโมชัน (promotion.html)
+======================================================== */
+function setupPromotionForm() {
+    const submitBtn = document.querySelector('.form-card .btn-submit');
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', async () => {
+        const inputs = document.querySelectorAll('.form-card input');
+        const data = {
+            promo_name: inputs[0].value.trim(),
+            start_date: inputs[1].value,
+            end_date: inputs[2].value,
+            discount: inputs[3].value
+        };
+
+        if (!data.promo_name || !data.start_date || !data.end_date || !data.discount) {
+            alert('กรุณากรอกข้อมูลโปรโมชันให้ครบถ้วน');
+            return;
+        }
+
+        const result = await callTenantAPI('add_promotion', data);
+        if (result.status === 'success') {
+            alert('สร้างโปรโมชันสำเร็จ!');
+            inputs.forEach(input => input.value = ''); 
+        } else {
+            alert('ผิดพลาด: ' + result.message);
+        }
+    });
+}
+
+/* ========================================================
+   หน้า 6: ประวัติการขาย (store_sales_tracking.html)
+======================================================== */
+async function setupSalesTracking() {
+    const searchBtn = document.querySelector('.sst-btn-search');
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const currentDate = today.toISOString().split('T')[0];
+    
+    if (dateInputs.length === 2) {
+        dateInputs[0].value = firstDay;
+        dateInputs[1].value = currentDate;
+    }
+
+    const fetchSales = async () => {
+        const tbody = document.querySelector('.sst-table tbody');
+        const totalSpan = document.querySelector('.sst-total-value');
+        
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">กำลังค้นหา...</td></tr>';
+        
+        const result = await callTenantAPI('get_sales_history', {
+            start_date: dateInputs[0].value,
+            end_date: dateInputs[1].value
+        });
+
+        if (result.status === 'success' && result.data.length > 0) {
+            tbody.innerHTML = '';
+            let grandTotal = 0;
+
+            result.data.forEach(sale => {
+                grandTotal += parseFloat(sale.TotalAmount);
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="sst-code">${sale.ReceiptID}</span></td>
+                        <td>${sale.SaleTime}</td>
+                        <td><span class="sst-code">${sale.ProductID}</span></td>
+                        <td>${sale.ProductName}</td>
+                        <td class="sst-qty">${sale.Quantity}</td>
+                        <td class="sst-amount">${parseFloat(sale.TotalAmount).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            totalSpan.textContent = grandTotal.toLocaleString();
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">ไม่พบประวัติการขายในช่วงเวลานี้</td></tr>';
+            totalSpan.textContent = '0';
+        }
+    };
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', fetchSales);
+        fetchSales(); 
+    }
+}
+
+/* ========================================================
+   หน้า 7: ยอดขายและสัญญา (sales_contract.html)
+======================================================== */
+async function loadContractAndInvoices() {
+    const result = await callTenantAPI('get_contract_invoices');
+    if (result.status === 'success') {
+        const data = result.data;
+
+        const infoValues = document.querySelectorAll('.contract-info-grid .info-value, .contract-info-grid .badge-active');
+        if (infoValues.length >= 3 && data.contract) {
+            infoValues[0].textContent = data.contract.ContractID || '-';
+            infoValues[1].textContent = `${data.contract.Zone} – ชั้น ${data.contract.Floor}`;
+            infoValues[2].textContent = data.contract.Status || 'Active';
+        }
+
+        const tbody = document.querySelector('.invoice-table tbody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            if (data.invoices && data.invoices.length > 0) {
+                data.invoices.forEach(inv => {
+                    const statusBadge = inv.Status === 'Paid' 
+                        ? `<span class="badge-paid"><i class="fas fa-check"></i> ชำระแล้ว</span>`
+                        : `<span class="badge-unpaid"><i class="fas fa-clock"></i> ยังไม่ได้ชำระ</span>`;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><span class="inv-id">${inv.InvoiceID}</span></td>
+                            <td>${inv.BillingMonth}</td>
+                            <td><span class="amount">฿${parseFloat(inv.TotalAmount).toLocaleString()}</span></td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ไม่มีใบแจ้งหนี้</td></tr>';
+            }
+        }
+    }
+}

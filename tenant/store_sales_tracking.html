@@ -8,8 +8,6 @@
 </head>
 <body>
     <div class="dashboard-container">
-
-        <!-- ── Sidebar ── -->
         <div class="sidebar">
             <h1>Tenant Panel</h1>
             <a href="index.html"               class="nav-item"><i class="fas fa-home"></i>            แผงควบคุม</a>
@@ -20,86 +18,41 @@
             <a href="sales_contract.html"      class="nav-item"><i class="fas fa-file-contract"></i>   ยอดขายและสัญญา</a>
             <a href="supplier.html"            class="nav-item"><i class="fas fa-truck"></i>           Supplier</a>
         </div>
-
-        <!-- ── Main Content ── -->
         <div class="main-content">
             <header>
                 <h2>Store Sales Tracking</h2>
-                <button class="btn btn-danger btn-logout">
-                    <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
-                </button>
+                <button class="btn btn-danger btn-logout"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
             </header>
-
-            <!-- Filter Card -->
             <div class="sst-filter-card">
                 <p class="sst-section-label">ประวัติการขายสินค้าของร้าน</p>
                 <div class="sst-filter-row">
                     <div class="sst-date-group">
                         <label>ตั้งแต่</label>
-                        <div class="sst-date-input-wrap">
-                            <input type="date" value="2026-01-01">
-                        </div>
+                        <div class="sst-date-input-wrap"><input type="date"></div>
                     </div>
                     <div class="sst-date-group">
                         <label>ถึง</label>
-                        <div class="sst-date-input-wrap">
-                            <input type="date" value="2026-01-01">
-                        </div>
+                        <div class="sst-date-input-wrap"><input type="date"></div>
                     </div>
-                    <button class="sst-btn-search">
-                        <i class="fas fa-search"></i> ค้นหา
-                    </button>
+                    <button class="sst-btn-search"><i class="fas fa-search"></i> ค้นหา</button>
                 </div>
             </div>
-
-            <!-- Sales Table Card -->
             <div class="sst-table-card">
                 <div class="sst-table-wrap">
                     <table class="sst-table">
-                        <thead>
-                            <tr>
-                                <th>รหัสการขาย</th>
-                                <th>เวลา</th>
-                                <th>รหัสสินค้า</th>
-                                <th>ชื่อสินค้า</th>
-                                <th>จำนวน</th>
-                                <th>ยอดรวม(Baht)</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>รหัสการขาย</th><th>เวลา</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>จำนวน</th><th>ยอดรวม(Baht)</th></tr></thead>
                         <tbody>
-                            <tr>
-                                <td><span class="sst-code">SAL890</span></td>
-                                <td>01/01/2026 10:00</td>
-                                <td><span class="sst-code">P55013</span></td>
-                                <td>ตู้เย็น</td>
-                                <td class="sst-qty">1</td>
-                                <td class="sst-amount">5,000</td>
-                            </tr>
-                            <tr>
-                                <td><span class="sst-code">SAL891</span></td>
-                                <td>01/01/2026 12:00</td>
-                                <td><span class="sst-code">P55012</span></td>
-                                <td>เสื้อขาว</td>
-                                <td class="sst-qty">1</td>
-                                <td class="sst-amount">199</td>
-                            </tr>
-                            <!-- Placeholder rows -->
-                            <tr class="sst-row-empty"><td colspan="6"></td></tr>
-                            <tr class="sst-row-empty"><td colspan="6"></td></tr>
+                            <!-- JS จะนำข้อมูลจริงมาใส่ตรงนี้ -->
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Total row -->
                 <div class="sst-total-row">
                     <span class="sst-total-label">ยอดรวมทั้งหมดในตาราง</span>
-                    <span class="sst-total-value">5,199</span>
+                    <span class="sst-total-value">0</span>
                 </div>
             </div>
-
-        </div><!-- /main-content -->
-    </div><!-- /dashboard-container -->
-
+        </div>
+    </div>
     <script src="../js/tenant.js"></script>
 </body>
 </html>

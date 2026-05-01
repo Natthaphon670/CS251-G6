@@ -20,23 +20,22 @@
         </div>
         <div class="main-content">
             <header>
-                <h2>ยินดีต้อนรับร้านค้า กลุ่ม 6</h2>
+                <h2>ยินดีต้อนรับร้านค้า</h2>
                 <button class="btn btn-danger btn-logout">
                     <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
                 </button>
             </header>
             <div class="card-grid">
-                <div class="stat-card"><h3>ยอดขายวันนี้</h3><p>฿12,450</p></div>
-                <div class="stat-card" style="border-color: #10b981;"><h3>สินค้าใกล้หมด</h3><p>3 รายการ</p></div>
-                <div class="stat-card" style="border-color: #f59e0b;"><h3>โปรโมชันที่เปิดอยู่</h3><p>2</p></div>
+                <div class="stat-card"><h3>ยอดขายวันนี้</h3><p id="dash-sales">฿0</p></div>
+                <div class="stat-card" style="border-color: #10b981;"><h3>สินค้าใกล้หมด</h3><p id="dash-low-stock">0 รายการ</p></div>
+                <div class="stat-card" style="border-color: #f59e0b;"><h3>โปรโมชันที่เปิดอยู่</h3><p id="dash-active-promo">0</p></div>
             </div>
             <div class="content-box">
                 <h3>รายการขายล่าสุด</h3>
                 <table>
                     <thead><tr><th>เวลา</th><th>รหัสสินค้า</th><th>จำนวน</th><th>ราคารวม</th></tr></thead>
                     <tbody>
-                        <tr><td>10:30</td><td>P001</td><td>2</td><td>฿500</td></tr>
-                        <tr><td>09:15</td><td>P005</td><td>1</td><td>฿1,200</td></tr>
+                        <!-- JS จะนำข้อมูลจริงมาใส่ตรงนี้ -->
                     </tbody>
                 </table>
             </div>
