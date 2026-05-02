@@ -168,13 +168,13 @@ function setupProductForm() {
     if (!submitBtn) return;
 
     submitBtn.addEventListener('click', async () => {
-        const inputs = document.querySelectorAll('.mp-card input, .mp-card select, .mp-card textarea');
+        // ดึงค่าตาม ID จะปลอดภัยกว่าการใช้ index [0], [1] 
         const data = {
-            category_name: inputs[0].value.trim(),
-            product_name: inputs[1].value.trim(),
-            product_price: inputs[2].value,
-            supplier_id: inputs[3].value,
-            description: inputs[4].value.trim()
+            category_name: document.getElementById('cat_name').value.trim(),
+            product_name: document.getElementById('prod_name').value.trim(),
+            product_price: document.getElementById('prod_price').value,
+            supplier_id: document.getElementById('sup_id').value,
+            description: document.getElementById('prod_desc').value.trim()
         };
 
         if (!data.product_name || !data.product_price || !data.category_name) {
@@ -188,7 +188,13 @@ function setupProductForm() {
         const result = await callTenantAPI('add_product', data);
         if (result.status === 'success') {
             alert('เพิ่มสินค้าสำเร็จ! รหัส: ' + result.product_id);
-            inputs.forEach(input => input.value = '');
+            // เคลียร์ค่าในช่องกรอก
+            document.getElementById('cat_name').value = '';
+            document.getElementById('prod_name').value = '';
+            document.getElementById('prod_price').value = '';
+            document.getElementById('sup_id').value = '';
+            document.getElementById('prod_desc').value = '';
+            
             loadProducts(); 
         } else {
             alert('เกิดข้อผิดพลาด: ' + result.message);

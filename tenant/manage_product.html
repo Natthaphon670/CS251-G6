@@ -31,22 +31,25 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>ชื่อหมวดหมู่ <span class="field-hint">(CategoryName)</span></label>
-                        <div class="input-with-icon"><i class="fas fa-layer-group"></i><input type="text" placeholder="เช่น ของเล่นเด็ก"></div>
+                        <div class="input-with-icon">
+                            <i class="fas fa-layer-group"></i>
+                            <input type="text" id="cat_name" placeholder="เช่น ของเล่นเด็ก">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>ชื่อสินค้า <span class="field-hint">(ProductName)</span></label>
-                        <div class="input-with-icon"><i class="fas fa-tag"></i><input type="text" placeholder="เช่น ตุ๊กตามีไซส์ L"></div>
+                        <div class="input-with-icon"><i class="fas fa-tag"></i><input type="text" id="prod_name" placeholder="เช่น ตุ๊กตามีไซส์ L"></div>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>ราคาสินค้า <span class="field-hint">(ProductPrice)</span></label>
-                        <div class="input-suffix"><input type="number" placeholder="0.00" min="0"><span class="suffix-label">฿</span></div>
+                        <div class="input-suffix"><input type="number" id="prod_price" placeholder="0.00" min="0"><span class="suffix-label">฿</span></div>
                     </div>
                     <div class="form-group">
                         <label>รหัสผู้จัดจำหน่าย <span class="field-hint">(SupplierID)</span></label>
                         <div class="mp-select-wrapper">
-                            <select class="mp-select">
+                            <select id="sup_id" class="mp-select">
                                 <option value="">— เลือกผู้จำหน่าย —</option>
                                 <!-- JS จะดึงรายชื่อ Supplier มาใส่ตรงนี้ -->
                             </select>
@@ -56,7 +59,7 @@
                 </div>
                 <div class="form-group">
                     <label>รายละเอียด <span class="field-hint">(ProductDescription)</span></label>
-                    <textarea class="mp-textarea" rows="3" placeholder="รายละเอียดสินค้า..."></textarea>
+                    <textarea id="prod_desc" class="mp-textarea" rows="3" placeholder="รายละเอียดสินค้า..."></textarea>
                 </div>
                 <button class="btn-submit"><i class="fas fa-save"></i> บันทึกข้อมูลและสร้าง ProductID</button>
             </div>

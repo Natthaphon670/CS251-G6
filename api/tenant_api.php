@@ -151,42 +151,59 @@ try {
             
         case 'add_product':
             try {
-                // 1. สร้างรหัส ProductID ใหม่ให้รันต่อจากของเดิม
+                $conn->beginTransaction();
+
+                // 1. จัดการเรื่องหมวดหมู่ (Category) ก่อน
+                $categoryName = $data['category_name'];
+                
+                // เช็คว่ามีหมวดหมู่ชื่อนี้ในระบบหรือยัง
+                $stmtCatCheck = $conn->prepare("SELECT CategoryID FROM Category WHERE CategoryName = :cname");
+                $stmtCatCheck->execute(['cname' => $categoryName]);
+                $categoryID = $stmtCatCheck->fetchColumn();
+
+                // ถ้ายังไม่มี ให้รันรหัสใหม่ (C0000X) แล้วสร้างหมวดหมู่ใหม่
+                if (!$categoryID) {
+                    $stmtLastCat = $conn->query("SELECT CategoryID FROM Category ORDER BY CategoryID DESC LIMIT 1");
+                    $lastCatId = $stmtLastCat->fetchColumn();
+                    $categoryID = $lastCatId ? 'C' . str_pad(intval(substr($lastCatId, 1)) + 1, 5, '0', STR_PAD_LEFT) : 'C00001';
+
+                    $stmtInsertCat = $conn->prepare("INSERT INTO Category (CategoryID, CategoryName) VALUES (?, ?)");
+                    $stmtInsertCat->execute([$categoryID, $categoryName]);
+                }
+
+                // 2. สร้างรหัส ProductID ใหม่
                 $stmtId = $conn->query("SELECT ProductID FROM Product ORDER BY ProductID DESC LIMIT 1");
                 $lastId = $stmtId->fetchColumn();
                 $newId = $lastId ? 'P' . str_pad(intval(substr($lastId, 1)) + 1, 5, '0', STR_PAD_LEFT) : 'P00001';
 
-                // 2. บันทึกลงตาราง Product หลัก
-                $stmt1 = $conn->prepare("INSERT INTO Product (ProductID, ProductName, ProductPrice, ProductDescription) VALUES (:pid, :pname, :price, :desc)");
-                $stmt1->execute([
-                    'pid' => $newId,
-                    'pname' => $data['product_name'], 
-                    'price' => $data['product_price'], 
-                    'desc' => $data['description']
-                ]);
+                // 3. บันทึกลงตาราง Product หลัก
+                $stmt1 = $conn->prepare("INSERT INTO Product (ProductID, ProductName, ProductPrice, ProductDescription) VALUES (?, ?, ?, ?)");
+                $stmt1->execute([$newId, $data['product_name'], $data['product_price'], $data['description']]);
 
-                // 3. บันทึกลงตาราง Supply เพื่อจับคู่สินค้ากับ Supplier
+                // 4. บันทึกลงตาราง Categorize (ผูกสินค้ากับหมวดหมู่) 🌟 ส่วนที่แก้ปัญหาของคุณ
+                $stmtCatLink = $conn->prepare("INSERT INTO Categorize (ProductID, CategoryID) VALUES (?, ?)");
+                $stmtCatLink->execute([$newId, $categoryID]);
+
+                // 5. บันทึกลงตาราง Supply (จับคู่สินค้ากับ Supplier)
                 if (!empty($data['supplier_id'])) {
-                    $stmt2 = $conn->prepare("INSERT INTO Supply (ProductID, SupplierID) VALUES (:pid, :supp)");
-                    $stmt2->execute([
-                        'pid' => $newId,
-                        'supp' => $data['supplier_id']
-                    ]);
+                    $stmt2 = $conn->prepare("INSERT INTO Supply (ProductID, SupplierID) VALUES (?, ?)");
+                    $stmt2->execute([$newId, $data['supplier_id']]);
                 }
 
-                // 4. บันทึกลงตาราง HaveProduct เพื่อผูกสินค้าเข้ากับร้านค้านี้โดยเฉพาะ
-                $stmt3 = $conn->prepare("INSERT INTO HaveProduct (TenantID, ProductID) VALUES (:tenant_id, :pid)");
-                $stmt3->execute([
-                    'tenant_id' => $tenant_id,
-                    'pid' => $newId
-                ]);
+                // 6. บันทึกลงตาราง HaveProduct (ผูกสินค้าเข้ากับร้านค้านี้)
+                // ตรวจสอบว่าใช้ $tenant_id จาก Session หรือที่ส่งมา
+                $tenant_id_to_use = $data['tenant_id'] ?? $tenant_id;
+                $stmt3 = $conn->prepare("INSERT INTO HaveProduct (TenantID, ProductID) VALUES (?, ?)");
+                $stmt3->execute([$tenant_id_to_use, $newId]);
 
-                // 5. บันทึกลงตาราง Store เพื่อนำสินค้าเข้าคลัง (กำหนดให้ลง W00001 เป็นค่าเริ่มต้น)
-                // $stmt4 = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID) VALUES (:pid, 'W00001')");
-                // $stmt4->execute(['pid' => $newId]);
+                // 7. บันทึกลงตาราง Store แบบ Default จำนวน 0 เพื่อให้มีข้อมูลเตรียมไว้
+                $stmt4 = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID, Quantity) VALUES (?, 'W00001', 0)");
+                $stmt4->execute([$newId]);
 
-                $response = ["status" => "success", "product_id" => $newId];
-            } catch (PDOException $e) {
+                $conn->commit();
+                $response = ["status" => "success", "product_id" => $newId, "message" => "เพิ่มสินค้าและหมวดหมู่สำเร็จ"];
+            } catch (Exception $e) {
+                $conn->rollBack();
                 $response = ["status" => "error", "message" => "SQL Error: " . $e->getMessage()];
             }
             break;
