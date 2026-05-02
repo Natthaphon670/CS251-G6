@@ -172,9 +172,9 @@ INSERT INTO HaveProduct (TenantID, ProductID) VALUES
 ('T00004', 'P00007'), -- คีย์บอร์ดไร้สาย (Mechanical)
 ('T00004', 'P00008'); -- เมาส์เกมมิ่ง RGB
 
---Update set random quantity in store table
+-- Update set random quantity in store table
 UPDATE Store SET Quantity = FLOOR(10 + (RAND() * 91));
---Update WarehouseQuantity (warehouse table)
+-- Update WarehouseQuantity (warehouse table)
 UPDATE Warehouse w
 LEFT JOIN (
     SELECT WarehouseID, SUM(Quantity) as TotalQuantity
