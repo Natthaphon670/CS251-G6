@@ -79,7 +79,15 @@ try {
             break;
 
         case 'get_warehouse':
-            $stmt = $conn->prepare("SELECT p.ProductID, p.ProductName, w.WarehouseQuantity as Quantity FROM Product p JOIN Store st ON p.ProductID = st.ProductID JOIN Warehouse w ON st.WarehouseID = w.WarehouseID JOIN Sale s ON p.ProductID = s.ProductID WHERE s.TenantID = :tenant_id GROUP BY p.ProductID");
+            $stmt = $conn->prepare("
+                SELECT st.WarehouseID, p.ProductID, p.ProductName, w.WarehouseQuantity as Quantity, w.LastUpdate 
+                FROM HaveProduct hp 
+                JOIN Product p ON hp.ProductID = p.ProductID 
+                JOIN Store st ON p.ProductID = st.ProductID 
+                JOIN Warehouse w ON st.WarehouseID = w.WarehouseID 
+                WHERE hp.TenantID = :tenant_id 
+                ORDER BY w.LastUpdate DESC
+            ");
             $stmt->execute(['tenant_id' => $tenant_id]);
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
@@ -157,8 +165,8 @@ try {
                 ]);
 
                 // 5. บันทึกลงตาราง Store เพื่อนำสินค้าเข้าคลัง (กำหนดให้ลง W00001 เป็นค่าเริ่มต้น)
-                $stmt4 = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID) VALUES (:pid, 'W00001')");
-                $stmt4->execute(['pid' => $newId]);
+                // $stmt4 = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID) VALUES (:pid, 'W00001')");
+                // $stmt4->execute(['pid' => $newId]);
 
                 $response = ["status" => "success", "product_id" => $newId];
             } catch (PDOException $e) {
@@ -190,9 +198,58 @@ try {
             break;
             
         case 'restock_product':
-            $stmt = $conn->prepare("UPDATE Warehouse w JOIN Store st ON w.WarehouseID = st.WarehouseID SET w.WarehouseQuantity = w.WarehouseQuantity + :add_qty, w.LastUpdate = NOW() WHERE st.TenantID = :tenant_id AND st.ProductID = :product_id");
-            $stmt->execute(['add_qty' => $data['add_qty'], 'tenant_id' => $tenant_id, 'product_id' => $data['product_id']]);
+            $stmt = $conn->prepare("UPDATE Warehouse SET WarehouseQuantity = WarehouseQuantity + :add_qty, LastUpdate = NOW() WHERE WarehouseID = :warehouse_id");
+            $stmt->execute(['add_qty' => $data['add_qty'], 'warehouse_id' => $data['warehouse_id']]);
             $response = ["status" => "success", "message" => "อัปเดตจำนวนสินค้าสำเร็จ"];
+            break;
+        // ---------------------------------------------
+        // เพิ่มใหม่: add_to_warehouse (เพิ่มสินค้าผูกคลังใหม่ / อัปเดตคลังเดิม)
+        // ---------------------------------------------
+        case 'add_to_warehouse':
+            $pid = $data['product_id'];
+            $wid = $data['warehouse_id'];
+            $qty = (int)$data['qty'];
+
+            try {
+                // 1. ตรวจสอบว่ามี WarehouseID นี้ในตาราง Warehouse หรือยัง
+                $stmtW = $conn->prepare("SELECT * FROM Warehouse WHERE WarehouseID = :wid");
+                $stmtW->execute(['wid' => $wid]);
+                $warehouse = $stmtW->fetch();
+
+                if (!$warehouse) {
+                    // ถ้ายังไม่มีคลังรหัสนี้ สร้างใหม่เลย
+                    $stmtInsW = $conn->prepare("INSERT INTO Warehouse (WarehouseID, WarehouseQuantity, LastUpdate) VALUES (:wid, :qty, NOW())");
+                    $stmtInsW->execute(['wid' => $wid, 'qty' => $qty]);
+                } else {
+                    // ถ้ามีคลังนี้อยู่แล้ว บวกจำนวนเพิ่มเข้าไป
+                    $stmtUpdW = $conn->prepare("UPDATE Warehouse SET WarehouseQuantity = WarehouseQuantity + :qty, LastUpdate = NOW() WHERE WarehouseID = :wid");
+                    $stmtUpdW->execute(['wid' => $wid, 'qty' => $qty]);
+                }
+
+                // 2. อัปเดตที่ผูกในตาราง Store (ลบของเก่าทิ้ง ผูกของใหม่)
+                $stmtDelS = $conn->prepare("DELETE FROM Store WHERE ProductID = :pid");
+                $stmtDelS->execute(['pid' => $pid]);
+
+                $stmtInsS = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID) VALUES (:pid, :wid)");
+                $stmtInsS->execute(['pid' => $pid, 'wid' => $wid]);
+
+                $response = ["status" => "success", "message" => "อัปเดตคลังสินค้าสำเร็จ"];
+            } catch (PDOException $e) {
+                $response = ["status" => "error", "message" => "SQL Error: " . $e->getMessage()];
+            }
+            break;
+        // ---------------------------------------------
+        // New ดึงข้อมูล Supplier ทั้งหมดในระบบ (สำหรับ Dropdown หน้าจัดการสินค้า)
+        // ---------------------------------------------
+        case 'get_all_suppliers':
+            // ไม่ต้อง where tenant_id เพราะต้องการดึงทุกเจ้า
+            $stmt = $conn->prepare("
+                SELECT SupplierID, SupplierName 
+                FROM Supplier 
+                ORDER BY SupplierID ASC
+            ");
+            $stmt->execute();
+            $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
     }
 } catch (PDOException $e) {

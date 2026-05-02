@@ -30,6 +30,34 @@
                     </tbody>
                 </table>
             </div>
+            <div class="form-card" style="margin-bottom: 2rem;">
+                <div class="form-card-title">
+                    <i class="fas fa-box-open"></i> นำเข้าสินค้าใหม่เข้าคลัง (ผูกคลังสินค้าครั้งแรก)
+                </div>
+                <!-- ปรับกริดให้มี 4 ช่อง: สินค้า | คลังสินค้า | จำนวน | ปุ่ม -->
+                <div class="form-row" style="grid-template-columns: 1.5fr 1fr 1fr auto; align-items: end; gap: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>เลือกสินค้าที่มีในระบบ</label>
+                        <select id="select-product" class="mp-select" style="width: 100%; height: 45px;">
+                            <option value="">— กำลังโหลดรายการสินค้า —</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>รหัสคลังสินค้า (Warehouse ID)</label>
+                        <input type="text" id="warehouse-id" placeholder="เช่น W00001" style="height: 45px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>จำนวนเริ่มต้น</label>
+                        <input type="number" id="new-qty" placeholder="0" min="1" style="height: 45px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <button class="btn-submit btn-submit-green" id="btn-add-to-store" style="margin-top: 0; padding: 0.8rem 1.5rem; height: 45px;">
+                            <i class="fas fa-plus"></i> เพิ่มเข้าคลัง
+                        </button>
+                    </div>
+                </div>
+                <small style="color: #64748b; margin-top: 10px; display: block;">* ระบุรหัสคลังที่ต้องการเก็บสินค้านี้ หากมีอยู่แล้วระบบจะเพิ่มจำนวนให้</small>
+            </div>
         </div>
     </div>
     <script src="../js/tenant.js"></script>

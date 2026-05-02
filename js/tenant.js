@@ -148,12 +148,18 @@ async function loadSuppliersDropdown() {
     const select = document.querySelector('.mp-select');
     if (!select) return;
 
-    const result = await callTenantAPI('get_suppliers');
+    // เปลี่ยนมาเรียก 'get_all_suppliers' เพื่อดึงข้อมูลทุกเจ้า
+    const result = await callTenantAPI('get_all_suppliers');
+    
     if (result.status === 'success') {
         select.innerHTML = '<option value="">— เลือกผู้จำหน่าย —</option>';
         result.data.forEach(s => {
-            select.innerHTML += `<option value="${s.SupplierID}">${s.SupplierID} – ${s.SupplierName}</option>`;
+            // แสดงรหัสและชื่อให้เลือกง่ายขึ้น
+            select.innerHTML += `<option value="${s.SupplierID}">[${s.SupplierID}] ${s.SupplierName}</option>`;
         });
+    } else {
+        console.error("โหลด Dropdown Supplier ไม่สำเร็จ:", result.message);
+        select.innerHTML = '<option value="">— โหลดข้อมูลผิดพลาด —</option>';
     }
 }
 
@@ -251,34 +257,121 @@ function setupSupplierForm() {
    หน้า 4: คลังสินค้า (warehouse.html)
 ======================================================== */
 async function loadWarehouse() {
+    console.log("กำลังโหลดหน้าคลังสินค้า...");
+    loadWarehouseDropdowns();
+    loadWarehouseStock();
+    setupWarehouseForm();
+}
+
+// 1. โหลดรายการสินค้า
+async function loadWarehouseDropdowns() {
+    const select = document.getElementById('select-product');
+    if (!select) return;
+
+    // เรียก API ดึงสินค้า (ตัวเดียวกับที่ใช้ในหน้าจัดการสินค้า)
+    const result = await callTenantAPI('get_products');
+    
+    // พิมพ์ผลลัพธ์ดูใน Console ว่าได้ข้อมูลมาไหม
+    console.log("ผลลัพธ์ Dropdown สินค้า:", result);
+
+    if (result.status === 'success') {
+        select.innerHTML = '<option value="">— เลือกสินค้า —</option>';
+        result.data.forEach(p => {
+            select.innerHTML += `<option value="${p.ProductID}">[${p.ProductID}] ${p.ProductName}</option>`;
+        });
+    } else {
+        console.error("โหลด Dropdown ไม่สำเร็จ:", result.message);
+    }
+}
+
+// 2. โหลดตารางสต็อก (ปรับให้ตรงกับ HTML 4 คอลัมน์ของคุณ)
+async function loadWarehouseStock() {
+    // หา tbody จากตาราง
     const tbody = document.querySelector('.content-box table tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error("หาตาราง .content-box table tbody ไม่เจอ!");
+        return;
+    }
 
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">กำลังโหลดสต็อก...</td></tr>';
+    
+    // เรียก API ดึงข้อมูลคลัง
     const result = await callTenantAPI('get_warehouse');
+    
+    // พิมพ์ผลลัพธ์ดูใน Console ว่าได้ข้อมูลมาไหม
+    console.log("ผลลัพธ์ตารางคลังสินค้า:", result);
 
     if (result.status === 'success' && result.data.length > 0) {
         tbody.innerHTML = '';
         result.data.forEach(item => {
+            // HTML ของคุณมี 4 คอลัมน์ (PID, ชื่อสินค้า, จำนวน, เติมสินค้า)
             tbody.innerHTML += `
                 <tr>
-                    <td><span class="mp-code">${item.ProductID}</span></td>
+                    <td>
+                        <span class="mp-code">${item.ProductID}</span><br>
+                        <small style="color:#64748b;">(คลัง: ${item.WarehouseID})</small>
+                    </td>
                     <td>${item.ProductName}</td>
                     <td><strong style="color: ${item.Quantity < 10 ? 'red' : 'inherit'}">${item.Quantity}</strong></td>
                     <td>
-                        <input type="number" id="qty_${item.ProductID}" style="width: 80px;" min="1" placeholder="จำนวน"> 
-                        <button class="btn btn-primary" onclick="restockProduct('${item.ProductID}')">เพิ่ม</button>
+                        <input type="number" id="qty_${item.WarehouseID}_${item.ProductID}" style="width: 80px; padding: 5px;" min="1" placeholder="จำนวน"> 
+                        <button class="btn btn-primary" style="padding: 5px 12px;" onclick="restockProduct('${item.WarehouseID}', '${item.ProductID}')">เพิ่ม</button>
                     </td>
                 </tr>
             `;
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ไม่พบข้อมูลสินค้าในคลัง</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ไม่พบข้อมูลสินค้าในคลัง</td></tr>';
     }
 }
 
-window.restockProduct = async function(productId) {
-    const qtyInput = document.getElementById(`qty_${productId}`);
+// 3. จัดการตอนกดปุ่ม "เพิ่มเข้าคลัง" (ผูกคลังใหม่ / ย้ายคลัง)
+function setupWarehouseForm() {
+    const btn = document.getElementById('btn-add-to-store');
+    if (!btn) return;
+
+    btn.onclick = async () => {
+        const pid = document.getElementById('select-product').value;
+        
+        const wid = document.getElementById('warehouse-id').value.trim().toUpperCase(); 
+        
+        const qty = document.getElementById('new-qty').value;
+
+        if (!pid || !wid || !qty || qty <= 0) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (เลือกรหัสสินค้า, ระบุ Warehouse ID, จำนวน)');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+        const result = await callTenantAPI('add_to_warehouse', {
+            product_id: pid,
+            warehouse_id: wid,
+            qty: qty
+        });
+
+        if (result.status === 'success') {
+            alert('อัปเดตคลังสินค้าสำเร็จ!');
+            // ล้างค่าฟอร์ม
+            document.getElementById('select-product').value = '';
+            document.getElementById('warehouse-id').value = '';
+            document.getElementById('new-qty').value = '';
+            
+            // โหลดตารางใหม่
+            loadWarehouseStock(); 
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + result.message);
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plus"></i> เพิ่มเข้าคลัง';
+    };
+}
+
+// 4. จัดการปุ่ม "เพิ่ม" ในตาราง (เติมสต็อก)
+window.restockProduct = async function(wid, pid) {
+    const qtyInput = document.getElementById(`qty_${wid}_${pid}`);
     const qty = parseInt(qtyInput.value);
 
     if (!qty || qty <= 0) {
@@ -286,10 +379,14 @@ window.restockProduct = async function(productId) {
         return;
     }
 
-    const result = await callTenantAPI('restock_product', { product_id: productId, add_qty: qty });
+    const result = await callTenantAPI('restock_product', { 
+        warehouse_id: wid, 
+        add_qty: qty 
+    });
+
     if (result.status === 'success') {
         alert('เติมสต็อกสำเร็จ!');
-        loadWarehouse(); 
+        loadWarehouseStock(); 
     } else {
         alert('ผิดพลาด: ' + result.message);
     }
