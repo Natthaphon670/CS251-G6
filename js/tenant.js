@@ -259,71 +259,139 @@ function setupSupplierForm() {
 async function loadWarehouse() {
     console.log("กำลังโหลดหน้าคลังสินค้า...");
     loadWarehouseDropdowns();
+    loadAvailableWarehouses(); //  เพิ่มการเรียกฟังก์ชันโหลด Dropdown คลังสินค้า
     loadWarehouseStock();
     setupWarehouseForm();
 }
 
-// 1. โหลดรายการสินค้า
+// 1. โหลดรายการสินค้า (Dropdown สินค้า)
 async function loadWarehouseDropdowns() {
     const select = document.getElementById('select-product');
     if (!select) return;
 
-    // เรียก API ดึงสินค้า (ตัวเดียวกับที่ใช้ในหน้าจัดการสินค้า)
     const result = await callTenantAPI('get_products');
     
-    // พิมพ์ผลลัพธ์ดูใน Console ว่าได้ข้อมูลมาไหม
-    console.log("ผลลัพธ์ Dropdown สินค้า:", result);
-
     if (result.status === 'success') {
         select.innerHTML = '<option value="">— เลือกสินค้า —</option>';
         result.data.forEach(p => {
             select.innerHTML += `<option value="${p.ProductID}">[${p.ProductID}] ${p.ProductName}</option>`;
         });
     } else {
-        console.error("โหลด Dropdown ไม่สำเร็จ:", result.message);
+        console.error("โหลด Dropdown สินค้าไม่สำเร็จ:", result.message);
     }
 }
 
-// 2. โหลดตารางสต็อก (ปรับให้ตรงกับ HTML 4 คอลัมน์ของคุณ)
-async function loadWarehouseStock() {
-    // หา tbody จากตาราง
-    const tbody = document.querySelector('.content-box table tbody');
-    if (!tbody) {
-        console.error("หาตาราง .content-box table tbody ไม่เจอ!");
-        return;
-    }
+// 1.5 โหลดรายการคลังสินค้า (Dropdown คลังสินค้า)
+async function loadAvailableWarehouses() {
+    const selectW = document.getElementById('warehouse-id');
+    if (!selectW) return;
 
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">กำลังโหลดสต็อก...</td></tr>';
+    // เรียกใช้ action ใหม่ที่ดึงรายชื่อ Warehouse ทั้งหมด
+    const result = await callTenantAPI('get_all_warehouses');
     
-    // เรียก API ดึงข้อมูลคลัง
+    if (result.status === 'success') {
+        selectW.innerHTML = '<option value="">— เลือกคลังสินค้า (Warehouse) —</option>';
+        result.data.forEach(w => {
+            // แสดงรหัสคลังสินค้าใน Dropdown
+            selectW.innerHTML += `<option value="${w.WarehouseID}">${w.WarehouseID}</option>`;
+        });
+    } else {
+        console.error("โหลด Dropdown คลังสินค้าไม่สำเร็จ:", result.message);
+    }
+}
+
+// โหลดตารางสต็อก 
+async function loadWarehouseStock() {
+    const tbody = document.querySelector('table tbody'); 
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">กำลังโหลดสต็อก...</td></tr>';
+    
     const result = await callTenantAPI('get_warehouse');
-    
-    // พิมพ์ผลลัพธ์ดูใน Console ว่าได้ข้อมูลมาไหม
-    console.log("ผลลัพธ์ตารางคลังสินค้า:", result);
 
     if (result.status === 'success' && result.data.length > 0) {
         tbody.innerHTML = '';
         result.data.forEach(item => {
-            // HTML ของคุณมี 4 คอลัมน์ (PID, ชื่อสินค้า, จำนวน, เติมสินค้า)
+            // สร้าง Dropdown คลังสินค้า
+            let warehouseOptions = '';
+            // ตรวจสอบว่ามีข้อมูล Warehouses ไหม
+            if (item.Warehouses && item.Warehouses.length > 0) {
+                item.Warehouses.forEach(w => {
+                     warehouseOptions += `<option value="${w.WarehouseID}" data-qty="${w.Quantity}">${w.WarehouseID}</option>`;
+                });
+            } else {
+                warehouseOptions = '<option value="">- ไม่มีคลัง -</option>';
+            }
+
+            // ค่า Quantity เริ่มต้น จะดึงจากคลังแรกในลิสต์
+            const defaultQty = item.Warehouses && item.Warehouses.length > 0 ? item.Warehouses[0].Quantity : 0;
+            const defaultWid = item.Warehouses && item.Warehouses.length > 0 ? item.Warehouses[0].WarehouseID : '';
+
             tbody.innerHTML += `
                 <tr>
-                    <td>
-                        <span class="mp-code">${item.ProductID}</span><br>
-                        <small style="color:#64748b;">(คลัง: ${item.WarehouseID})</small>
-                    </td>
+                    <td><span class="mp-code">${item.ProductID}</span></td>
                     <td>${item.ProductName}</td>
-                    <td><strong style="color: ${item.Quantity < 10 ? 'red' : 'inherit'}">${item.Quantity}</strong></td>
-                    <td>
-                        <input type="number" id="qty_${item.WarehouseID}_${item.ProductID}" style="width: 80px; padding: 5px;" min="1" placeholder="จำนวน"> 
-                        <button class="btn btn-primary" style="padding: 5px 12px;" onclick="restockProduct('${item.WarehouseID}', '${item.ProductID}')">เพิ่ม</button>
+                    <td><strong>${item.TotalQuantity}</strong></td>
+                    <td style="display: flex; gap: 10px; align-items: center;">
+                        <select id="select_wid_${item.ProductID}" style="padding: 5px; border-radius: 4px;" 
+                                onchange="updateQtyInput('${item.ProductID}')">
+                            ${warehouseOptions}
+                        </select>
+                        <input type="number" id="qty_${item.ProductID}" 
+                               style="width: 80px; padding: 5px; text-align: center; font-weight: bold;" 
+                               min="0" value="${defaultQty}"> 
+                    </td>
+                    <td> <button class="btn btn-warning" style="background-color: #85ceff; color: #000; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;" 
+                                onclick="updateProductStock('${item.ProductID}')">
+                        อัปเดต
+                        </button>
                     </td>
                 </tr>
             `;
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">ไม่พบข้อมูลสินค้าในคลัง</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">ไม่พบข้อมูลสินค้าในคลัง</td></tr>';
     }
 }
+window.updateQtyInput = function(pid) {
+    const select = document.getElementById(`select_wid_${pid}`);
+    const qtyInput = document.getElementById(`qty_${pid}`);
+    
+    // ดึงค่า Quantity จาก attribute data-qty ของ option ที่ถูกเลือก
+    const selectedOption = select.options[select.selectedIndex];
+    const qty = selectedOption.getAttribute('data-qty');
+    
+    qtyInput.value = qty;
+};
+window.updateProductStock = async function(pid) {
+    const select = document.getElementById(`select_wid_${pid}`);
+    const wid = select.value;
+    const qtyInput = document.getElementById(`qty_${pid}`);
+    const newQty = parseInt(qtyInput.value);
+
+    if (!wid) {
+         alert('ไม่พบคลังสินค้าที่ต้องการอัปเดต');
+         return;
+    }
+
+    if (isNaN(newQty) || newQty < 0) {
+        alert('กรุณาระบุจำนวนให้ถูกต้อง (ต้องไม่ติดลบ)');
+        return;
+    }
+
+    const result = await callTenantAPI('update_store_quantity', { 
+        product_id: pid,
+        warehouse_id: wid, 
+        quantity: newQty 
+    });
+
+    if (result.status === 'success') {
+        alert('อัปเดตสต็อกสำเร็จ!');
+        loadWarehouseStock(); 
+    } else {
+        alert('ผิดพลาด: ' + result.message);
+    }
+};
 
 // 3. จัดการตอนกดปุ่ม "เพิ่มเข้าคลัง" (ผูกคลังใหม่ / ย้ายคลัง)
 function setupWarehouseForm() {
@@ -332,27 +400,27 @@ function setupWarehouseForm() {
 
     btn.onclick = async () => {
         const pid = document.getElementById('select-product').value;
-        
-        const wid = document.getElementById('warehouse-id').value.trim().toUpperCase(); 
-        
+        const wid = document.getElementById('warehouse-id').value; // ดึงค่าจาก Dropdown
         const qty = document.getElementById('new-qty').value;
 
         if (!pid || !wid || !qty || qty <= 0) {
-            alert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (เลือกรหัสสินค้า, ระบุ Warehouse ID, จำนวน)');
+            alert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (เลือกรหัสสินค้า, เลือกคลังสินค้า, จำนวน)');
             return;
         }
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
 
-        const result = await callTenantAPI('add_to_warehouse', {
+        // เปลี่ยน action ให้ตรงกับ API ที่เราสร้างใน PHP
+        const result = await callTenantAPI('bind_product_to_warehouse', {
             product_id: pid,
             warehouse_id: wid,
-            qty: qty
+            quantity: qty // ส่งพารามิเตอร์ให้ตรงกับที่ PHP รับค่า
         });
 
         if (result.status === 'success') {
-            alert('อัปเดตคลังสินค้าสำเร็จ!');
+            alert(result.message); // แจ้งเตือนว่าผูกคลังใหม่ หรืออัปเดตของเดิม
+            
             // ล้างค่าฟอร์ม
             document.getElementById('select-product').value = '';
             document.getElementById('warehouse-id').value = '';
@@ -379,13 +447,18 @@ window.restockProduct = async function(wid, pid) {
         return;
     }
 
-    const result = await callTenantAPI('restock_product', { 
+    // เปลี่ยนมาใช้ bind_product_to_warehouse ด้วยเลย
+    // เพราะ API ตัวนี้ถูกออกแบบมาให้ทำได้ทั้ง สร้าง Row ใหม่ และ อัปเดต Row เดิม (ที่มีอยู่แล้วในตาราง Store) 
+    // ช่วยให้โค้ดส่วน Backend สะอาดขึ้นโดยไม่ต้องมีหลายฟังก์ชัน
+    const result = await callTenantAPI('bind_product_to_warehouse', { 
+        product_id: pid,
         warehouse_id: wid, 
-        add_qty: qty 
+        quantity: qty 
     });
 
     if (result.status === 'success') {
         alert('เติมสต็อกสำเร็จ!');
+        qtyInput.value = ''; // ล้างช่องกรอกตัวเลข
         loadWarehouseStock(); 
     } else {
         alert('ผิดพลาด: ' + result.message);

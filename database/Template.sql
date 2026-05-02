@@ -171,3 +171,14 @@ INSERT INTO HaveProduct (TenantID, ProductID) VALUES
 -- ร้าน T00004: PC Master (ขายคอมพิวเตอร์และอุปกรณ์)
 ('T00004', 'P00007'), -- คีย์บอร์ดไร้สาย (Mechanical)
 ('T00004', 'P00008'); -- เมาส์เกมมิ่ง RGB
+
+--Update set random quantity in store table
+UPDATE Store SET Quantity = FLOOR(10 + (RAND() * 91));
+--Update WarehouseQuantity (warehouse table)
+UPDATE Warehouse w
+LEFT JOIN (
+    SELECT WarehouseID, SUM(Quantity) as TotalQuantity
+    FROM Store
+    GROUP BY WarehouseID
+) s ON w.WarehouseID = s.WarehouseID
+SET w.WarehouseQuantity = COALESCE(s.TotalQuantity, 0);

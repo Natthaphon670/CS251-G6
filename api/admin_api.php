@@ -220,28 +220,159 @@ try {
         // ==========================================
         // ระบบที่ 6: Sales Management (บันทึกการขาย)
         // ==========================================
+        // case 'get_sales':
+        //     // JOIN เอาชื่อสินค้าและชื่อร้านมาโชว์ด้วย
+        //     $stmt = $conn->query("
+        //         SELECT s.SalesID, s.SalesDate, s.Quantity, p.ProductName, t.TenantName 
+        //         FROM Sale s 
+        //         JOIN Product p ON s.ProductID = p.ProductID 
+        //         JOIN Tenant t ON s.TenantID = t.TenantID 
+        //         ORDER BY s.SalesDate DESC
+        //     ");
+        //     $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+        //     break;
+
+        // case 'add_sale':
+        //     $salesID = $_POST['sales_id'];
+        //     $salesDate = $_POST['sales_date']; // format: YYYY-MM-DD HH:MM:SS
+        //     $quantity = $_POST['quantity'];
+        //     $tenantID = $_POST['tenant_id'];
+        //     $productID = $_POST['product_id'];
+
+        //     $stmt = $conn->prepare("INSERT INTO Sale (SalesID, SalesDate, Quantity, TenantID, ProductID) VALUES (?, ?, ?, ?, ?)");
+        //     $stmt->execute([$salesID, $salesDate, $quantity, $tenantID, $productID]);
+        //     $response = ["status" => "success", "message" => "บันทึกการขายสำเร็จ"];
+        //     break;
+        // 1. ดึงข้อมูลร้านค้าทั้งหมดมาใส่ Dropdown
+        case 'get_tenants_for_sales':
+            $stmt = $conn->query("SELECT TenantID, TenantName FROM Tenant ORDER BY TenantID ASC");
+            $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+            break;
+
+        // 2. ดึงสินค้าเฉพาะของร้านที่เลือก + เช็คโปรโมชั่นอัตโนมัติ (ลบเป็น %)
+        case 'get_products_by_tenant':
+            $tenant_id = $_POST['tenant_id'];
+            $stmt = $conn->prepare("
+                SELECT p.ProductID, p.ProductName, p.ProductPrice,
+                       COALESCE(
+                           (SELECT pr.Discount
+                            FROM Promotion pr
+                            JOIN cheapen c ON pr.PromotionID = c.PromotionID
+                            WHERE c.ProductID = p.ProductID
+                              AND pr.TenantID = :tenant_id
+                              AND CURDATE() BETWEEN pr.StartDatePromotion AND pr.EndDatePromotion
+                            LIMIT 1), 0) as DiscountPercent
+                FROM Product p
+                JOIN HaveProduct hp ON p.ProductID = hp.ProductID
+                WHERE hp.TenantID = :tenant_id
+            ");
+            $stmt->execute(['tenant_id' => $tenant_id]);
+            $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+            break;
+
+        // 3. บันทึกการขาย (สร้าง ID ให้เอง และรองรับหลายสินค้า)
+        // 3. บันทึกการขาย + ตัดสต็อกอัตโนมัติ (รองรับการหักหลายคลัง)
+        case 'add_multiple_sales':
+            $sales_date = $_POST['sales_date']; 
+            $tenant_id = $_POST['tenant_id'];
+            $items = json_decode($_POST['items'], true); 
+
+            try {
+                $conn->beginTransaction();
+
+                // หารหัส SalesID ล่าสุดในระบบ
+                $stmtId = $conn->query("SELECT SalesID FROM Sale ORDER BY SalesID DESC LIMIT 1");
+                $lastId = $stmtId->fetchColumn();
+                $next_num = $lastId ? intval(substr($lastId, 2)) + 1 : 1;
+
+                $stmtInsert = $conn->prepare("INSERT INTO Sale (SalesID, SalesDate, Quantity, TenantID, ProductID) VALUES (?, ?, ?, ?, ?)");
+
+                // วนลูปจัดการทีละสินค้าที่ถูกกดขาย
+                foreach ($items as $item) {
+                    $pid = $item['product_id'];
+                    $qty_to_sell = $item['quantity'];
+
+                    // ----------------------------------------------------
+                    // ส่วนที่ 1: ตัดสต็อกในตาราง Store 
+                    // ----------------------------------------------------
+                    // ดึงข้อมูลคลังทั้งหมดที่มีสินค้านี้อยู่ และมีของ > 0 (เรียงจากคลังที่มีของเยอะสุดก่อน)
+                    $stmtFindStore = $conn->prepare("SELECT WarehouseID, Quantity FROM Store WHERE ProductID = ? AND Quantity > 0 ORDER BY Quantity DESC");
+                    $stmtFindStore->execute([$pid]);
+                    $stores = $stmtFindStore->fetchAll(PDO::FETCH_ASSOC);
+
+                    // เช็คก่อนว่ามีของพอขายไหม
+                    $total_available = array_sum(array_column($stores, 'Quantity'));
+                    if ($total_available < $qty_to_sell) {
+                        throw new Exception("สินค้า $pid มีสต็อกไม่พอ! (มี $total_available ชิ้น, แต่จะขาย $qty_to_sell ชิ้น)");
+                    }
+
+                    // เริ่มหักสต็อกทีละคลัง
+                    $qty_left_to_deduct = $qty_to_sell;
+                    foreach ($stores as $store) {
+                        if ($qty_left_to_deduct <= 0) break; // หักครบจำนวนที่ขายแล้ว ให้หยุด
+
+                        $wid = $store['WarehouseID'];
+                        $available = $store['Quantity'];
+
+                        if ($available >= $qty_left_to_deduct) {
+                            // กรณีที่คลังนี้มีของพอให้หักจบในทีเดียว
+                            $conn->prepare("UPDATE Store SET Quantity = Quantity - ? WHERE ProductID = ? AND WarehouseID = ?")->execute([$qty_left_to_deduct, $pid, $wid]);
+                            
+                            // สั่งอัปเดตยอดรวมในตาราง Warehouse ทันที
+                            $conn->prepare("UPDATE Warehouse SET WarehouseQuantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Store WHERE WarehouseID = ?), LastUpdate = CURRENT_TIMESTAMP WHERE WarehouseID = ?")->execute([$wid, $wid]);
+                            
+                            $qty_left_to_deduct = 0; 
+                        } else {
+                            // กรณีที่คลังนี้ของไม่พอ ให้หักเกลี้ยงคลัง (เป็น 0) แล้วเก็บเศษไปหักคลังอื่นต่อ
+                            $conn->prepare("UPDATE Store SET Quantity = 0 WHERE ProductID = ? AND WarehouseID = ?")->execute([$pid, $wid]);
+                            
+                            // สั่งอัปเดตยอดรวมในตาราง Warehouse ทันที
+                            $conn->prepare("UPDATE Warehouse SET WarehouseQuantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Store WHERE WarehouseID = ?), LastUpdate = CURRENT_TIMESTAMP WHERE WarehouseID = ?")->execute([$wid, $wid]);
+
+                            $qty_left_to_deduct -= $available; 
+                        }
+                    }
+
+                    // ----------------------------------------------------
+                    // ส่วนที่ 2: บันทึกยอดขายลงตาราง Sale
+                    // ----------------------------------------------------
+                    $newSalesId = 'SL' . str_pad($next_num, 4, '0', STR_PAD_LEFT);
+                    $stmtInsert->execute([
+                        $newSalesId,
+                        $sales_date,
+                        $qty_to_sell,
+                        $tenant_id,
+                        $pid
+                    ]);
+                    $next_num++; 
+                }
+
+                $conn->commit();
+                $response = ["status" => "success", "message" => "บันทึกยอดขายและตัดสต็อกสำเร็จ!"];
+            } catch (Exception $e) {
+                $conn->rollBack();
+                $response = ["status" => "error", "message" => $e->getMessage()];
+            }
+            break;
+
+        // 4. อัปเดตฟังก์ชันดึงประวัติการขาย (คำนวณราคาสุทธิที่หักโปรฯ แล้วมาโชว์)
         case 'get_sales':
-            // JOIN เอาชื่อสินค้าและชื่อร้านมาโชว์ด้วย
             $stmt = $conn->query("
-                SELECT s.SalesID, s.SalesDate, s.Quantity, p.ProductName, t.TenantName 
+                SELECT s.SalesID, s.SalesDate, s.Quantity, p.ProductName, t.TenantName,
+                       (p.ProductPrice * s.Quantity * (1 - COALESCE(
+                           (SELECT pr.Discount
+                            FROM Promotion pr
+                            JOIN cheapen c ON pr.PromotionID = c.PromotionID
+                            WHERE c.ProductID = p.ProductID
+                              AND pr.TenantID = s.TenantID
+                              AND DATE(s.SalesDate) BETWEEN pr.StartDatePromotion AND pr.EndDatePromotion
+                            LIMIT 1), 0) / 100)) as FinalAmount
                 FROM Sale s 
                 JOIN Product p ON s.ProductID = p.ProductID 
                 JOIN Tenant t ON s.TenantID = t.TenantID 
                 ORDER BY s.SalesDate DESC
             ");
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
-            break;
-
-        case 'add_sale':
-            $salesID = $_POST['sales_id'];
-            $salesDate = $_POST['sales_date']; // format: YYYY-MM-DD HH:MM:SS
-            $quantity = $_POST['quantity'];
-            $tenantID = $_POST['tenant_id'];
-            $productID = $_POST['product_id'];
-
-            $stmt = $conn->prepare("INSERT INTO Sale (SalesID, SalesDate, Quantity, TenantID, ProductID) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$salesID, $salesDate, $quantity, $tenantID, $productID]);
-            $response = ["status" => "success", "message" => "บันทึกการขายสำเร็จ"];
             break;
 
         // ==========================================
@@ -269,17 +400,19 @@ try {
             $response = ["status" => "success", "message" => "บันทึกประวัติการออกรายงานสำเร็จ"];
             break;
 
-    case 'get_warehouse':
-            // JOIN หลายตารางเพื่อดึงข้อมูล Product, Warehouse, Category และ Supplier มาแสดงพร้อมกัน
-            $sql = "SELECT p.ProductID, p.ProductName, w.WarehouseQuantity, c.CategoryName, s.SupplierName 
-                    FROM Product p
-                    JOIN Store st ON p.ProductID = st.ProductID
-                    JOIN Warehouse w ON st.WarehouseID = w.WarehouseID
+    // หน้า warehouse
+        case 'get_warehouse':
+            $sql = "SELECT w.WarehouseID, p.ProductID, p.ProductName, 
+                           COALESCE(st.Quantity, w.WarehouseQuantity, 0) as Quantity, 
+                           c.CategoryName, s.SupplierName 
+                    FROM Warehouse w
+                    LEFT JOIN Store st ON w.WarehouseID = st.WarehouseID
+                    LEFT JOIN Product p ON st.ProductID = p.ProductID
                     LEFT JOIN Categorize ct ON p.ProductID = ct.ProductID
                     LEFT JOIN Category c ON ct.CategoryID = c.CategoryID
                     LEFT JOIN Supply sup ON p.ProductID = sup.ProductID
                     LEFT JOIN Supplier s ON sup.SupplierID = s.SupplierID
-                    ORDER BY p.ProductID ASC";
+                    ORDER BY w.WarehouseID DESC"; // เรียงจากคลังใหม่ล่าสุดขึ้นก่อน
             $stmt = $conn->query($sql);
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
             break;
@@ -378,7 +511,92 @@ try {
             $stmt->execute([$floor, $location, $size, $id]);
             $response = ["status" => "success", "message" => "อัปเดตข้อมูลพื้นที่รหัส $id เรียบร้อยแล้ว"];
             break;
+        // 2. สร้างคลังสินค้าใหม่ (รันเลขให้อัตโนมัติใน DB)
+        // 2. สร้างคลังสินค้าใหม่ (หารหัสที่ว่างอยู่ / อุดช่องโหว่)
+        case 'add_empty_warehouse':
+            try {
+                // ดึงรหัสคลังทั้งหมดมาเรียงจากน้อยไปมาก (W00001, W00002, W00003, W00005...)
+                $stmt = $conn->query("SELECT WarehouseID FROM Warehouse ORDER BY WarehouseID ASC");
+                $existing_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                $next_num = 1; // ตั้งเป้าว่าจะหาเลข 1 ก่อน
+                
+                // วนลูปเช็คทีละเลข
+                foreach ($existing_ids as $id) {
+                    $num = intval(substr($id, 1)); // ตัด 'W' ออกแล้วแปลงเป็นตัวเลข
+                    
+                    if ($num == $next_num) {
+                        // ถ้าเลขตรงกับที่หาอยู่ ให้ขยับเป้าหมายไปหาเลขถัดไป
+                        $next_num++; 
+                    } else if ($num > $next_num) {
+                        // ถ้าเลขที่ดึงมา มากกว่าเลขที่หาอยู่
+                        break; 
+                    }
+                }
+                $newId = 'W' . str_pad($next_num, 5, '0', STR_PAD_LEFT);
+
+                // Insert แบบ Quantity = 0 ทันที
+                $stmtInsert = $conn->prepare("INSERT INTO Warehouse (WarehouseID, WarehouseQuantity, LastUpdate) VALUES (?, 0, CURRENT_TIMESTAMP)");
+                $stmtInsert->execute([$newId]);
+                
+                $response = ["status" => "success", "message" => "เปิดคลังใหม่รหัส $newId สำเร็จ!"];
+            } catch (Exception $e) {
+                $response = ["status" => "error", "message" => "เกิดข้อผิดพลาด: " . $e->getMessage()];
+            }
+            break;
+
+        // 3. ลบคลังสินค้า หรือ ลบสินค้า
+        // 3. ลบคลังสินค้า (และเอาสินค้าออกจากคลังนั้น โดยไม่กระทบข้อมูลสินค้าหลัก)
+        case 'delete_warehouse_item':
+            $warehouseID = $_POST['warehouse_id'] ?? '';
+            $productID = $_POST['product_id'] ?? '';
+
+            try {
+                $conn->beginTransaction();
+                
+                if (!empty($warehouseID) && !empty($productID)) {
+                    // กรณีที่ 1: ลบสินค้าที่ผูกกับคลัง (มีทั้ง W000XX และ P000XX)
+                    $stmtDel = $conn->prepare("DELETE FROM Store WHERE WarehouseID = ? AND ProductID = ?");
+                    $stmtDel->execute([$warehouseID, $productID]);
+                    
+                    $stmtSync = $conn->prepare("
+                        UPDATE Warehouse 
+                        SET WarehouseQuantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Store WHERE WarehouseID = ?), 
+                            LastUpdate = CURRENT_TIMESTAMP 
+                        WHERE WarehouseID = ?
+                    ");
+                    $stmtSync->execute([$warehouseID, $warehouseID]);
+
+                    $msg = "นำสินค้า $productID ออกจากคลัง $warehouseID เรียบร้อยแล้ว";
+
+                } else if (!empty($warehouseID) && empty($productID)) {
+                    // กรณีที่ 2: ลบคลังว่าง (แถวสีเหลืองที่มีแต่ W000XX)
+                    // เช็คให้ชัวร์ก่อนว่า WarehouseQuantity เป็น 0 จริงๆ
+                    $stmtCheck = $conn->prepare("SELECT WarehouseQuantity FROM Warehouse WHERE WarehouseID = ?");
+                    $stmtCheck->execute([$warehouseID]);
+                    $wQty = $stmtCheck->fetchColumn();
+
+                    if ($wQty > 0) {
+                        throw new Exception("ไม่สามารถลบคลังได้! คลังสินค้านี้ยังมีของอยู่ ($wQty ชิ้น)");
+                    }
+
+                    // ถ้ายอดเป็น 0 และไม่มีของแล้ว ถึงจะอนุญาตให้ลบคลังทิ้งได้
+                    $conn->prepare("DELETE FROM Warehouse WHERE WarehouseID = ?")->execute([$warehouseID]);
+                    $msg = "ลบคลังว่าง $warehouseID สำเร็จ";
+
+                } else {
+                    throw new Exception("ข้อมูลไม่ครบถ้วน ไม่สามารถทำรายการได้");
+                }
+                
+                $conn->commit();
+                $response = ["status" => "success", "message" => $msg];
+            } catch (Exception $e) {
+                $conn->rollBack();
+                $response = ["status" => "error", "message" => $e->getMessage()];
+            }
+            break;
     }
+    
     
 } catch (PDOException $e) {
     // ดักจับ Error จาก Database

@@ -79,17 +79,34 @@ try {
             break;
 
         case 'get_warehouse':
-            $stmt = $conn->prepare("
-                SELECT st.WarehouseID, p.ProductID, p.ProductName, w.WarehouseQuantity as Quantity, w.LastUpdate 
-                FROM HaveProduct hp 
-                JOIN Product p ON hp.ProductID = p.ProductID 
-                JOIN Store st ON p.ProductID = st.ProductID 
-                JOIN Warehouse w ON st.WarehouseID = w.WarehouseID 
-                WHERE hp.TenantID = :tenant_id 
-                ORDER BY w.LastUpdate DESC
-            ");
-            $stmt->execute(['tenant_id' => $tenant_id]);
-            $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+            try {
+                // ดึงข้อมูลสินค้า พร้อมรวมคลังและจำนวนมาเป็น JSON เพื่อให้ JS ไปแยกสร้าง Dropdown
+                $stmt = $conn->prepare("
+                    SELECT 
+                        p.ProductID, 
+                        p.ProductName, 
+                        SUM(st.Quantity) as TotalQuantity,
+                        CONCAT('[', GROUP_CONCAT(JSON_OBJECT('WarehouseID', st.WarehouseID, 'Quantity', st.Quantity)), ']') as WarehouseData
+                    FROM Store st
+                    JOIN Product p ON st.ProductID = p.ProductID
+                    JOIN HaveProduct hp ON p.ProductID = hp.ProductID
+                    WHERE hp.TenantID = :tenant_id
+                    GROUP BY p.ProductID, p.ProductName
+                ");
+                
+                $stmt->execute(['tenant_id' => $tenant_id]);
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // แปลง WarehouseData ที่เป็น String ให้เป็น Array เพื่อให้ใช้ใน JS ง่ายขึ้น
+                foreach ($results as &$row) {
+                    $row['Warehouses'] = json_decode($row['WarehouseData'], true);
+                    unset($row['WarehouseData']); // ลบตัวเก่าทิ้ง
+                }
+
+                $response = ["status" => "success", "data" => $results];
+            } catch (PDOException $e) {
+                $response = ["status" => "error", "message" => "SQL Error: " . $e->getMessage()];
+            }
             break;
 
         case 'get_sales_history':
@@ -238,6 +255,34 @@ try {
                 $response = ["status" => "error", "message" => "SQL Error: " . $e->getMessage()];
             }
             break;
+        case 'update_store_quantity':
+            $product_id = $data['product_id'];
+            $warehouse_id = $data['warehouse_id'];
+            $new_quantity = $data['quantity'] ?? 0;
+
+            try {
+                $conn->beginTransaction();
+
+                // 2.1 อัปเดตจำนวนใหม่แบบทับค่าเดิม (Overwrite) ในตาราง Store
+                $stmtUpdate = $conn->prepare("UPDATE Store SET Quantity = :qty WHERE ProductID = :pid AND WarehouseID = :wid");
+                $stmtUpdate->execute(['qty' => $new_quantity, 'pid' => $product_id, 'wid' => $warehouse_id]);
+
+                // 2.2 สั่งซิงค์ยอดรวมกลับไปที่ตาราง Warehouse อัตโนมัติ (เหมือนเดิม)
+                $stmtSync = $conn->prepare("
+                    UPDATE Warehouse 
+                    SET WarehouseQuantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Store WHERE WarehouseID = :wid), 
+                        LastUpdate = CURRENT_TIMESTAMP 
+                    WHERE WarehouseID = :wid
+                ");
+                $stmtSync->execute(['wid' => $warehouse_id]);
+
+                $conn->commit();
+                $response = ["status" => "success", "message" => "อัปเดตสต็อกคลัง $warehouse_id สำเร็จ!"];
+            } catch (PDOException $e) {
+                $conn->rollBack();
+                $response = ["status" => "error", "message" => "SQL Error: " . $e->getMessage()];
+            }
+            break;
         // ---------------------------------------------
         // New ดึงข้อมูล Supplier ทั้งหมดในระบบ (สำหรับ Dropdown หน้าจัดการสินค้า)
         // ---------------------------------------------
@@ -250,6 +295,54 @@ try {
             ");
             $stmt->execute();
             $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+            break;
+            // 1. ดึงรายชื่อ Warehouse ทั้งหมดไปแสดงใน Dropdown
+        case 'get_all_warehouses':
+            $stmt = $conn->query("SELECT WarehouseID FROM Warehouse ORDER BY WarehouseID ASC");
+            $response = ["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+            break;
+
+        // 2. จัดการผูกสินค้าเข้า Store (คลังสินค้า)
+        case 'bind_product_to_warehouse':
+            $product_id = $data['product_id'];
+            $warehouse_id = $data['warehouse_id'];
+            $quantity = $data['quantity'] ?? 0;
+
+            try {
+                $conn->beginTransaction(); // เริ่ม Transaction ป้องกันข้อมูลพังกลางทาง
+
+                // 1. จัดการข้อมูลในตาราง Store (เก็บจำนวนย่อยของแต่ละสินค้า)
+                $stmtCheck = $conn->prepare("SELECT * FROM Store WHERE ProductID = :pid AND WarehouseID = :wid");
+                $stmtCheck->execute(['pid' => $product_id, 'wid' => $warehouse_id]);
+
+                if ($stmtCheck->rowCount() > 0) {
+                    // มีอยู่แล้ว -> บวกเพิ่ม
+                    $stmtUpdate = $conn->prepare("UPDATE Store SET Quantity = Quantity + :qty WHERE ProductID = :pid AND WarehouseID = :wid");
+                    $stmtUpdate->execute(['qty' => $quantity, 'pid' => $product_id, 'wid' => $warehouse_id]);
+                    $msg = "บวกเพิ่มจำนวนสินค้าในคลัง $warehouse_id เดิมสำเร็จ!";
+                } else {
+                    // ยังไม่มี -> สร้างแถวใหม่
+                    $stmtInsert = $conn->prepare("INSERT INTO Store (ProductID, WarehouseID, Quantity) VALUES (:pid, :wid, :qty)");
+                    $stmtInsert->execute(['pid' => $product_id, 'wid' => $warehouse_id, 'qty' => $quantity]);
+                    $msg = "ผูกสินค้าเข้ากับคลังใหม่ ($warehouse_id) สำเร็จ!";
+                }
+
+                // 2. 🟢 ทีเด็ดอยู่ตรงนี้: สั่งอัปเดต WarehouseQuantity อัตโนมัติ!
+                // ให้รวม Quantity ทั้งหมดใน Store ที่มี WarehouseID ตรงกัน แล้วเอาไปอัปเดตตารางหลัก
+                $stmtSync = $conn->prepare("
+                    UPDATE Warehouse 
+                    SET WarehouseQuantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Store WHERE WarehouseID = :wid), 
+                        LastUpdate = CURRENT_TIMESTAMP 
+                    WHERE WarehouseID = :wid
+                ");
+                $stmtSync->execute(['wid' => $warehouse_id]);
+
+                $conn->commit(); // ยืนยันการบันทึกข้อมูล
+                $response = ["status" => "success", "message" => $msg];
+            } catch (PDOException $e) {
+                $conn->rollBack(); // ถ้ายกเลิกกลางคัน ให้ย้อนข้อมูลกลับ
+                $response = ["status" => "error", "message" => "SQL Error: " . $e->getMessage()];
+            }
             break;
     }
 } catch (PDOException $e) {

@@ -24,9 +24,17 @@
             <div class="content-box">
                 <h3>สต็อกสินค้าปัจจุบัน</h3>
                 <table>
-                    <thead><tr><th>PID</th><th>ชื่อสินค้า</th><th>จำนวนในคลัง</th><th>เติมสินค้า</th></tr></thead>
-                    <tbody>
-                         <!-- JS จะนำข้อมูลจริงมาใส่ตรงนี้ -->
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>ชื่อสินค้า</th>
+                            <th>จำนวนในคลัง</th>
+                            <th>รหัสคลัง (Warehouse)</th> <!-- เพิ่มคอลัมน์นี้ -->
+                            <th>อัปเดตสินค้า</th> <!-- เปลี่ยนชื่อคอลัมน์ -->
+                        </tr>
+                    </thead>
+                    <tbody id="tenantWarehouseBody">
+                        <!-- JS จะนำข้อมูลจริงมาใส่ตรงนี้ -->
                     </tbody>
                 </table>
             </div>
@@ -44,7 +52,9 @@
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>รหัสคลังสินค้า (Warehouse ID)</label>
-                        <input type="text" id="warehouse-id" placeholder="เช่น W00001" style="height: 45px;">
+                        <select id="warehouse-id" name="warehouse_id" style="width: 100%; height: 45px; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px;">
+                            <option value="">-- กำลังโหลดข้อมูลคลังสินค้า --</option>
+                        </select>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>จำนวนเริ่มต้น</label>

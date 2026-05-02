@@ -42,14 +42,43 @@
             <section class="content-section">
                 <div class="card" style="margin-bottom: 20px;">
                     <h3>ลงบันทึกการขายประจำวัน (Manual Entry)</h3>
-                    <form id="addSaleForm" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px;">
-    <input type="date" name="sales_date" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-    <input type="text" name="tenant_id" placeholder="รหัสร้านค้า (T0000X)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-    <input type="text" name="product_id" placeholder="รหัสสินค้า (P0000X)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-    <input type="number" name="quantity" placeholder="ยอดรวม฿" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-    <input type="text" name="sales_id" placeholder="รหัสรายการ (SL000X)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-    <button type="submit" style="grid-column: span 3; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">บันทึกยอดขาย</button>
-</form>
+                    <form id="addSaleForm" style="margin-top: 15px;">
+                        
+                        <!-- แถวบน: วันที่, ร้านค้า, ยอดรวม -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="font-size: 14px; color: #555;">วันที่-เวลาขาย</label>
+                                <input type="datetime-local" id="sales_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 14px; color: #555;">ร้านค้า (Tenant)</label>
+                                <select id="tenant_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" onchange="handleTenantChange()">
+                                    <option value="">-- เลือกร้านค้า --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 14px; color: #555;">ยอดรวมทั้งหมด (บาท)</label>
+                                <input type="text" id="grand_total" readonly value="0.00" style="width: 100%; padding: 10px; background: #e9ecef; border: 1px solid #ddd; border-radius: 5px; font-weight: bold; color: #28a745; font-size: 16px;">
+                            </div>
+                        </div>
+
+                        <!-- แถวกลาง: โซนเพิ่มสินค้าหลายๆ ตัว -->
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                            <label style="font-size: 14px; color: #555; font-weight: bold; display: block; margin-bottom: 10px;">รายการสินค้าที่ขาย</label>
+                            
+                            <div id="product-lines-container">
+                                <!-- JS จะสร้าง Dropdown สินค้ามาแทรกตรงนี้ -->
+                            </div>
+                            
+                            <button type="button" onclick="addProductLine()" style="margin-top: 10px; padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                                + เพิ่มรายการสินค้า
+                            </button>
+                        </div>
+
+                        <button type="submit" style="width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                            บันทึกยอดขาย
+                        </button>
+                    </form>
                 </div>
 
                 <div class="card">
@@ -61,7 +90,7 @@
                                 <th style="padding: 12px;">วันที่ (Date)</th>
                                 <th style="padding: 12px;">ร้านค้า (Shop)</th>
                                 <th style="padding: 12px;">ยอดรวม (Amount)</th>
-                                <th style="padding: 12px;">วิธีชำระ (Payment)</th>
+                                <th style="padding: 12px;">รายการสินค้า (Products)</th>
                             </tr>
                         </thead>
                         <tbody id="salesTableBody">

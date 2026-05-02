@@ -191,6 +191,118 @@ async function loadInvoices() {
 }
 
 // --- Sales ---
+// async function loadSales() {
+//     const res = await callAdminAPI('get_sales');
+//     const tbody = document.getElementById('salesTableBody');
+//     if (res.status === 'success' && tbody) {
+//         tbody.innerHTML = res.data.map(sale => `
+//             <tr style="border-bottom: 1px solid #ddd;">
+//                 <td style="padding: 12px;">${sale.SalesID}</td>
+//                 <td style="padding: 12px;">${sale.SalesDate}</td>
+//                 <td style="padding: 12px;">${sale.TenantName}</td>
+//                 <td style="padding: 12px; color: green; font-weight: bold;">฿ ${Number(sale.Quantity * 100).toLocaleString()}</td> 
+//                 <td style="padding: 12px;">${sale.ProductName} (x${sale.Quantity})</td>
+//             </tr>
+//         `).join('');
+//     }
+// }
+// ==========================================
+// ระบบการจัดการยอดขาย (Sales Management)
+// ==========================================
+
+let currentTenantProducts = []; // ตัวแปรเก็บสินค้าของร้านที่เลือก
+
+// 1. ดึงรายชื่อร้านค้าเข้า Dropdown
+async function loadTenantsForSales() {
+    const res = await callAdminAPI('get_tenants_for_sales');
+    const select = document.getElementById('tenant_id');
+    if(res.status === 'success' && select) {
+        select.innerHTML = '<option value="">-- เลือกร้านค้า --</option>';
+        res.data.forEach(t => {
+            select.innerHTML += `<option value="${t.TenantID}">[${t.TenantID}] ${t.TenantName}</option>`;
+        });
+    }
+}
+
+// 2. เมื่อเลือกร้านค้า -> โหลดสินค้าของร้านนั้นมาเตรียมไว้
+async function handleTenantChange() {
+    const tenantId = document.getElementById('tenant_id').value;
+    const container = document.getElementById('product-lines-container');
+    container.innerHTML = ''; // เคลียร์สินค้าเดิมทิ้ง
+    document.getElementById('grand_total').value = '0.00';
+
+    if (!tenantId) {
+        currentTenantProducts = [];
+        return;
+    }
+
+    const res = await callAdminAPI('get_products_by_tenant', { tenant_id: tenantId });
+    if (res.status === 'success') {
+        currentTenantProducts = res.data;
+        addProductLine(); // เพิ่มช่องว่างให้กรอก 1 แถวอัตโนมัติ
+    }
+}
+
+// 3. ฟังก์ชันเพิ่มแถวสินค้าใหม่
+function addProductLine() {
+    if (currentTenantProducts.length === 0) {
+        alert("ร้านค้านี้ยังไม่มีสินค้าในระบบ กรุณาเลือกร้านอื่น");
+        return;
+    }
+
+    const container = document.getElementById('product-lines-container');
+    
+    // สร้างตัวเลือก Dropdown พร้อมเก็บ data-price และ data-discount เอาไว้คำนวณ
+    let options = '<option value="">-- เลือกสินค้า --</option>';
+    currentTenantProducts.forEach(p => {
+        let promoText = p.DiscountPercent > 0 ? ` (🔥ลด ${p.DiscountPercent}%)` : '';
+        options += `<option value="${p.ProductID}" data-price="${p.ProductPrice}" data-discount="${p.DiscountPercent}">[${p.ProductID}] ${p.ProductName}${promoText} - ฿${p.ProductPrice}</option>`;
+    });
+
+    const row = document.createElement('div');
+    row.className = 'product-line';
+    row.style.cssText = 'display: grid; grid-template-columns: 3fr 1fr 1fr auto; gap: 10px; margin-bottom: 10px; align-items: center;';
+    
+    row.innerHTML = `
+        <select class="prod-select" required style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;" onchange="calculateSalesTotal()">
+            ${options}
+        </select>
+        <input type="number" class="prod-qty" min="1" value="1" placeholder="จำนวน" required style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;" oninput="calculateSalesTotal()">
+        <input type="text" class="prod-subtotal" readonly placeholder="ราคารวม" style="padding: 8px; background: #eee; border: 1px solid #ddd; border-radius: 5px; text-align: right;">
+        <button type="button" onclick="this.parentElement.remove(); calculateSalesTotal();" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">ลบ</button>
+    `;
+    container.appendChild(row);
+}
+
+// 4. คำนวณราคาสุทธิ (หักเปอร์เซ็นต์โปรโมชั่นให้ด้วย)
+function calculateSalesTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('.product-line').forEach(row => {
+        const select = row.querySelector('.prod-select');
+        const qtyInput = row.querySelector('.prod-qty');
+        const subtotalInput = row.querySelector('.prod-subtotal');
+        
+        if (select.value && qtyInput.value) {
+            const selectedOption = select.options[select.selectedIndex];
+            const price = parseFloat(selectedOption.getAttribute('data-price'));
+            const discount = parseFloat(selectedOption.getAttribute('data-discount')); // เปอร์เซ็นต์ส่วนลด
+            const qty = parseInt(qtyInput.value);
+            
+            // คำนวณส่วนลด: ราคา * (1 - (ลด% / 100))
+            const finalPrice = price * (1 - (discount / 100));
+            const subtotal = finalPrice * qty;
+            
+            subtotalInput.value = subtotal.toFixed(2);
+            grandTotal += subtotal;
+        } else {
+            subtotalInput.value = '0.00';
+        }
+    });
+    // โชว์ยอดรวมสุทธิ
+    document.getElementById('grand_total').value = grandTotal.toFixed(2);
+}
+
+// 5. โหลดตารางประวัติยอดขาย (อัปเดตใหม่)
 async function loadSales() {
     const res = await callAdminAPI('get_sales');
     const tbody = document.getElementById('salesTableBody');
@@ -200,12 +312,74 @@ async function loadSales() {
                 <td style="padding: 12px;">${sale.SalesID}</td>
                 <td style="padding: 12px;">${sale.SalesDate}</td>
                 <td style="padding: 12px;">${sale.TenantName}</td>
-                <td style="padding: 12px; color: green; font-weight: bold;">฿ ${Number(sale.Quantity * 100).toLocaleString()}</td> 
+                <td style="padding: 12px; color: green; font-weight: bold;">฿ ${Number(sale.FinalAmount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td> 
                 <td style="padding: 12px;">${sale.ProductName} (x${sale.Quantity})</td>
             </tr>
         `).join('');
     }
 }
+
+// 6. กดปุ่มบันทึกยอดขาย
+document.addEventListener('DOMContentLoaded', () => {
+    // ถ้าอยู่หน้า Sales ให้โหลดข้อมูลเริ่มต้น
+    if (document.getElementById('salesTableBody')) {
+        loadSales();
+        loadTenantsForSales();
+        
+        // เซ็ตวันที่และเวลาปัจจุบันลงในช่อง input
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('sales_date').value = now.toISOString().slice(0,16);
+    }
+
+    const salesForm = document.getElementById('addSaleForm');
+    if (salesForm) {
+        salesForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const salesDate = document.getElementById('sales_date').value;
+            const tenantId = document.getElementById('tenant_id').value;
+            
+            // รวบรวมสินค้าทั้งหมดที่ถูกเพิ่มในแถว
+            const items = [];
+            document.querySelectorAll('.product-line').forEach(row => {
+                const pid = row.querySelector('.prod-select').value;
+                const qty = row.querySelector('.prod-qty').value;
+                if (pid && qty > 0) {
+                    items.push({ product_id: pid, quantity: qty });
+                }
+            });
+
+            if (items.length === 0) {
+                alert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
+                return;
+            }
+
+            // ยิง API
+            const res = await callAdminAPI('add_multiple_sales', {
+                sales_date: salesDate.replace('T', ' '), // แปลงฟอร์แมตให้ DB อ่านง่าย
+                tenant_id: tenantId,
+                items: JSON.stringify(items)
+            });
+
+            if (res.status === 'success') {
+                alert(res.message);
+                // รีเซ็ตฟอร์ม
+                document.getElementById('tenant_id').value = '';
+                document.getElementById('product-lines-container').innerHTML = '';
+                document.getElementById('grand_total').value = '0.00';
+                
+                // เซ็ตเวลาปัจจุบันใหม่
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('sales_date').value = now.toISOString().slice(0,16);
+                
+                loadSales(); // รีเฟรชตาราง
+            } else {
+                alert("Error: " + res.message);
+            }
+        };
+    }
+});
 
 // --- Reports ---
 async function loadReports() {
@@ -222,21 +396,72 @@ async function loadReports() {
         `).join('');
     }
 }
-
-// --- Warehouse (คลังสินค้าส่วนกลาง) ---
+//Warehouse
 async function loadWarehouse() {
     const res = await callAdminAPI('get_warehouse');
     const tbody = document.getElementById('warehouseTableBody');
     if (res.status === 'success' && tbody) {
-        tbody.innerHTML = res.data.map(item => `
-            <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 12px;">${item.ProductID}</td>
-                <td style="padding: 12px;">${item.ProductName}</td>
-                <td style="padding: 12px;">${item.CategoryName || '-'}</td>
-                <td style="padding: 12px;"><strong style="${item.WarehouseQuantity < 50 ? 'color: red;' : ''}">${item.WarehouseQuantity}</strong></td>
-                <td style="padding: 12px;">${item.SupplierName || 'ทั่วไป'}</td>
+        tbody.innerHTML = res.data.map(item => {
+            // เช็คว่ามี ProductID ไหม ถ้าไม่มีแปลว่าเป็นคลังเปล่าๆ
+            const isCode = item.ProductID ? item.ProductID : item.WarehouseID;
+            const isName = item.ProductName ? item.ProductName : '<span style="color:#aaa;">รอเชื่อมระบบ...</span>';
+            const isCat = item.CategoryName ? item.CategoryName : '<span style="color:#aaa;">-</span>';
+            const isSup = item.SupplierName ? item.SupplierName : '<span style="color:#aaa;">-</span>';
+            
+            // เตรียมพารามิเตอร์สำหรับปุ่มลบ
+            const delParams = item.ProductID 
+                ? `'${item.WarehouseID}', '${item.ProductID}'` 
+                : `'${item.WarehouseID}', ''`;
+
+            return `
+            <tr style="border-bottom: 1px solid #ddd; ${!item.ProductID ? 'background-color: #fffbcc;' : ''}">
+                <td style="padding: 12px;"><b>${isCode}</b> <br><small style="color:#888;">${item.ProductID ? `(คลัง: ${item.WarehouseID})` : '(คลังว่าง)'}</small></td>
+                <td style="padding: 12px;">${isName}</td>
+                <td style="padding: 12px;">${isCat}</td>
+                <td style="padding: 12px;"><strong>${item.Quantity}</strong></td>
+                <td style="padding: 12px;">${isSup}</td>
+                <td style="padding: 12px;">
+                    <button onclick="deleteWarehouseRow(this, ${delParams})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">ลบ (Delete)</button>
+                </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
+    }
+}
+
+// 2. New Function: Add new editable row directly to the table
+async function addWarehouseRowInline() {
+    // ให้ปุ่มมันโหลดชั่วคราว ป้องกันคนกดย้ำๆ
+    const btn = document.querySelector('.btn-primary') || document.querySelector('.btn-add-stock');
+    if (btn) btn.disabled = true;
+
+    const res = await callAdminAPI('add_empty_warehouse');
+    if (res.status === 'success') {
+        loadWarehouse(); // โหลดตารางใหม่ทันที จะเห็นคลังโผล่ขึ้นมาเลย
+    } else {
+        alert("Error: " + res.message);
+    }
+    
+    if (btn) btn.disabled = false;
+}
+
+// 3. New Function: Remove the row from the table
+async function deleteWarehouseRow(btn, warehouseID, productID) {
+    let confirmMsg = productID 
+        ? `ยืนยันการลบสินค้า ${productID} ออกจากคลัง?`
+        : `ยืนยันการลบ "คลังสินค้าว่าง ${warehouseID}" ใช่หรือไม่?`;
+
+    if(confirm(confirmMsg)) {
+        const res = await callAdminAPI('delete_warehouse_item', { 
+            warehouse_id: warehouseID,
+            product_id: productID 
+        });
+        
+        if(res.status === 'success') {
+            btn.closest('tr').remove(); // เอาออกจากหน้าจอ
+        } else {
+            alert(res.message); // โชว์ข้อความ Error จาก PHP (เช่น ลบไม่ได้เพราะมีสินค้าอยู่)
+        }
     }
 }
 
@@ -331,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (document.getElementById('spaceTableBody')) openModal('spaceModal');
             else if (document.getElementById('leaseTableBody')) openModal('leaseModal');
             else if (document.getElementById('invoiceTableBody')) openModal('invoiceModal');
-            else if (document.getElementById('warehouseTableBody')) openModal('warehouseModal');
         };
     }
 
@@ -398,16 +622,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- ฟอร์มบันทึกการขาย (ไม่มี Modal) ---
-    const saleForm = document.getElementById('addSaleForm');
-    if (saleForm) {
-        saleForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const res = await callAdminAPI('add_sale', Object.fromEntries(new FormData(saleForm)));
-            if (res.status === 'success') {
-                alert(res.message); saleForm.reset(); loadSales();
-            } else { alert("Error: " + res.message); }
-        };
-    }
+    // const saleForm = document.getElementById('addSaleForm');
+    // if (saleForm) {
+    //     saleForm.onsubmit = async (e) => {
+    //         e.preventDefault();
+    //         const res = await callAdminAPI('add_sale', Object.fromEntries(new FormData(saleForm)));
+    //         if (res.status === 'success') {
+    //             alert(res.message); saleForm.reset(); loadSales();
+    //         } else { alert("Error: " + res.message); }
+    //     };
+    // }
 
     // --- ฟอร์มเพิ่มสต็อกสินค้า (Warehouse) ---
     const warehouseForm = document.getElementById('addWarehouseForm');

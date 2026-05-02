@@ -152,6 +152,7 @@ CREATE TABLE Supply (
 CREATE TABLE Store (
     ProductID VARCHAR(6),
     WarehouseID VARCHAR(6),
+    Quantity INT NOT NULL DEFAULT 0,
     PRIMARY KEY (ProductID, WarehouseID),
     FOREIGN KEY (ProductID) REFERENCES Product(ProductID) ON DELETE CASCADE,
     FOREIGN KEY (WarehouseID) REFERENCES Warehouse(WarehouseID) ON DELETE CASCADE
